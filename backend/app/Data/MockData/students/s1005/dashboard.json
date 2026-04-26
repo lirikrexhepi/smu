@@ -3,7 +3,7 @@
     { "id": "todays-classes", "label": "Today's Classes", "value": "1", "helper": "Classes scheduled", "tone": "blue" },
     { "id": "upcoming-deadlines", "label": "Upcoming Deadlines", "value": "3", "helper": "In the next 14 days", "tone": "orange" },
     { "id": "attendance-status", "label": "Attendance Status", "value": "89%", "helper": "Overall attendance", "tone": "green" },
-    { "id": "current-gpa", "label": "Current GPA", "value": "3.58", "helper": "Out of 4.00", "tone": "purple" }
+    { "id": "average-grade", "label": "Average Grade", "value": "8.4", "helper": "5-10 scale", "tone": "purple" }
   ],
   "todaysClasses": [
     { "id": "class-cy480", "time": "11:00 - 12:30", "courseCode": "CY480", "courseName": "Incident Response", "room": "Security Lab", "type": "Lab", "tone": "purple" }
@@ -14,9 +14,9 @@
     { "id": "deadline-capstone-demo", "title": "Capstone Demo - Security Capstone (CY499)", "courseCode": "CY499", "date": "08 May 2026", "statusLabel": "12 days left", "tone": "orange" }
   ],
   "latestGrades": [
-    { "id": "grade-cy480-lab", "course": "Incident Response (CY480)", "assessment": "Forensics Lab", "type": "Lab", "grade": "A- (3.7)", "date": "18 Apr 2026", "tone": "green" },
-    { "id": "grade-cy455-midterm", "course": "Secure Systems (CY455)", "assessment": "Midterm", "type": "Exam", "grade": "B+ (3.3)", "date": "12 Apr 2026", "tone": "blue" },
-    { "id": "grade-cy499-proposal", "course": "Security Capstone (CY499)", "assessment": "Proposal", "type": "Project", "grade": "A (4.0)", "date": "07 Apr 2026", "tone": "green" }
+    { "id": "grade-cy480-lab", "course": "Incident Response (CY480)", "assessment": "Forensics Lab", "type": "Lab", "grade": "9/10", "date": "18 Apr 2026", "tone": "green" },
+    { "id": "grade-cy455-midterm", "course": "Secure Systems (CY455)", "assessment": "Midterm", "type": "Exam", "grade": "8/10", "date": "12 Apr 2026", "tone": "blue" },
+    { "id": "grade-cy499-proposal", "course": "Security Capstone (CY499)", "assessment": "Proposal", "type": "Project", "grade": "10/10", "date": "07 Apr 2026", "tone": "green" }
   ],
   "attendanceWarning": {
     "courseCode": "CY455",

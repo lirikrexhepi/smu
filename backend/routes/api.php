@@ -7,17 +7,20 @@ use App\Controllers\HealthController;
 use App\Controllers\StudentAttendanceController;
 use App\Controllers\StudentCoursesController;
 use App\Controllers\StudentDashboardController;
+use App\Controllers\StudentGradesTranscriptController;
 use App\Controllers\StudentProfileController;
 use App\Core\Router;
 use App\Repositories\Mock\MockStudentAttendanceRepository;
 use App\Repositories\Mock\MockStudentCoursesRepository;
 use App\Repositories\Mock\MockStudentDashboardRepository;
+use App\Repositories\Mock\MockStudentGradesTranscriptRepository;
 use App\Repositories\Mock\MockStudentProfileRepository;
 use App\Repositories\Mock\MockUserRepository;
 use App\Services\AuthService;
 use App\Services\StudentAttendanceService;
 use App\Services\StudentCoursesService;
 use App\Services\StudentDashboardService;
+use App\Services\StudentGradesTranscriptService;
 use App\Services\StudentProfileService;
 use App\Validators\LoginRequestValidator;
 use App\Validators\StudentProfileAvatarValidator;
@@ -56,6 +59,12 @@ return static function (Router $router): void {
     );
 
     $router->get('/api/student/attendance', [$studentAttendanceController, 'show']);
+
+    $studentGradesTranscriptController = new StudentGradesTranscriptController(
+        new StudentGradesTranscriptService(new MockStudentGradesTranscriptRepository()),
+    );
+
+    $router->get('/api/student/grades-transcript', [$studentGradesTranscriptController, 'show']);
 
     $studentProfileService = new StudentProfileService($studentProfileRepository);
     $studentProfileController = new StudentProfileController(

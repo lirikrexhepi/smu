@@ -1,0 +1,85 @@
+{
+  "courseId": "cs308",
+  "code": "CS308",
+  "name": "Databases",
+  "professor": {
+    "name": "Prof. Liridon Bujupi",
+    "email": "liridon.bujupi@uni-pr.edu",
+    "officeHours": "Wed 13:30 - 14:30",
+    "consultation": "By appointment"
+  },
+  "ects": 4,
+  "schedule": {
+    "days": ["Wed", "Fri"],
+    "daysLabel": "Wed, Fri",
+    "time": "12:00 - 13:30",
+    "room": "D110",
+    "label": "Wed, Fri 12:00 - 13:30"
+  },
+  "room": "D110",
+  "semester": "Semester 4 (Spring 2025/26)",
+  "status": "Active",
+  "description": "Databases introduces relational modeling, SQL, normalization, transactions, indexing, and practical database-backed application design.",
+  "overview": {
+    "learningOutcomes": [
+      "Design normalized relational schemas.",
+      "Write SQL queries for data retrieval and reporting.",
+      "Explain transactions, indexes, and integrity constraints."
+    ],
+    "topics": ["Relational model", "SQL", "Normalization", "Transactions", "Indexes"],
+    "gradingBreakdown": "Project 40%, Exams 40%, Assignments 20%"
+  },
+  "courseInfo": [
+    { "id": "office-hours", "label": "Office Hours", "value": "Wed 13:30 - 14:30 (D110)" },
+    { "id": "consultation", "label": "Consultation", "value": "liridon.bujupi@uni-pr.edu - By appointment" },
+    { "id": "grading-breakdown", "label": "Grading Breakdown", "value": "Project 40%, Exams 40%, Assignments 20%" }
+  ],
+  "materials": [
+    { "id": "cs308-material-1", "title": "Normalization Lecture", "type": "Slides", "updatedAt": "18 Apr 2026", "size": "1.4 MB" },
+    { "id": "cs308-material-2", "title": "SQL Practice Dataset", "type": "Dataset", "updatedAt": "20 Apr 2026", "size": "2.2 MB" },
+    { "id": "cs308-material-3", "title": "Project Proposal Template", "type": "Template", "updatedAt": "22 Apr 2026", "size": "180 KB" }
+  ],
+  "attendance": {
+    "requiredPercentage": 75,
+    "sessionsHeld": 16,
+    "sessionsAttended": 14,
+    "status": "On track",
+    "summary": [
+      { "label": "Lectures attended", "value": "10 of 11" },
+      { "label": "Labs attended", "value": "4 of 5" },
+      { "label": "Absences remaining", "value": "3" }
+    ],
+    "records": [
+      { "id": "cs308-att-1", "date": "24 Apr 2026", "type": "Lecture", "status": "Present" },
+      { "id": "cs308-att-2", "date": "22 Apr 2026", "type": "Lab", "status": "Present" },
+      { "id": "cs308-att-3", "date": "17 Apr 2026", "type": "Lecture", "status": "Present" }
+    ]
+  },
+  "grades": {
+    "scale": "10-point",
+    "breakdown": [
+      { "component": "Project", "weight": 40 },
+      { "component": "Exams", "weight": 40 },
+      { "component": "Assignments", "weight": 20 }
+    ],
+    "records": [
+      { "id": "cs308-grade-1", "title": "SQL Assignment", "type": "Assignment", "score": "9/10", "weight": "10%", "date": "10 Apr 2026", "status": "Published" },
+      { "id": "cs308-grade-2", "title": "Schema Design", "type": "Assignment", "score": "9.5/10", "weight": "10%", "date": "18 Apr 2026", "status": "Published" }
+    ]
+  },
+  "assessments": [
+    { "id": "cs308-project-proposal", "title": "Project Proposal", "type": "Project", "date": "05 May 2026", "time": "23:59", "statusLabel": "9 days left", "tone": "purple", "mode": "Group", "description": "Submit project scope, schema draft, and team roles." },
+    { "id": "cs308-sql-check", "title": "SQL Checkpoint", "type": "Quiz", "date": "09 May 2026", "time": "12:00", "statusLabel": "13 days left", "tone": "blue", "mode": "Individual", "description": "Short SQL query checkpoint." }
+  ],
+  "exams": [
+    { "id": "cs308-midterm", "title": "Midterm Exam", "type": "Exam", "date": "14 May 2026", "time": "12:00", "statusLabel": "18 days left", "tone": "orange", "duration": "90 min", "room": "D110" }
+  ],
+  "announcements": [
+    { "id": "cs308-ann-1", "title": "Project Proposal Template", "body": "Use the uploaded template for project proposals.", "date": "22 Apr 2026" },
+    { "id": "cs308-ann-2", "title": "SQL Practice Dataset", "body": "The SQL practice dataset has been uploaded to materials.", "date": "20 Apr 2026" }
+  ],
+  "deadlines": [
+    { "id": "cs308-project-proposal", "title": "Project Proposal", "type": "Next Exam", "date": "05 May 2026", "time": "23:59", "statusLabel": "9 days left", "tone": "purple" },
+    { "id": "cs308-sql-check", "title": "SQL Checkpoint", "type": "Quiz", "date": "09 May 2026", "time": "12:00", "statusLabel": "13 days left", "tone": "blue" }
+  ]
+}

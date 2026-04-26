@@ -1,8 +1,24 @@
 import { apiGet, apiPatch, apiUpload } from '@/lib/api/client'
-import type { StudentDashboardSummary, StudentProfile, StudentProfileUpdate } from '@/types/student'
+import type {
+  StudentCourseDetail,
+  StudentCoursesOverview,
+  StudentDashboardSummary,
+  StudentProfile,
+  StudentProfileUpdate,
+} from '@/types/student'
 
 export function getStudentDashboard(studentKey: string) {
   return apiGet<StudentDashboardSummary>(`/api/student/dashboard?studentKey=${encodeURIComponent(studentKey)}`)
+}
+
+export function getStudentCourses(studentKey: string) {
+  return apiGet<StudentCoursesOverview>(`/api/student/courses?studentKey=${encodeURIComponent(studentKey)}`)
+}
+
+export function getStudentCourseDetail(studentKey: string, courseId: string) {
+  return apiGet<StudentCourseDetail>(
+    `/api/student/courses/${encodeURIComponent(courseId)}?studentKey=${encodeURIComponent(studentKey)}`,
+  )
 }
 
 export function getStudentProfile(studentKey: string) {

@@ -1,0 +1,86 @@
+{
+  "courseId": "cs306",
+  "code": "CS306",
+  "name": "Networks",
+  "professor": {
+    "name": "Prof. Besnik Shala",
+    "email": "besnik.shala@uni-pr.edu",
+    "officeHours": "Mon 13:00 - 14:00, Wed 11:00 - 12:00",
+    "consultation": "By appointment"
+  },
+  "ects": 5,
+  "schedule": {
+    "days": ["Tue", "Thu"],
+    "daysLabel": "Tue, Thu",
+    "time": "12:00 - 13:30",
+    "room": "A204",
+    "label": "Tue, Thu 12:00 - 13:30"
+  },
+  "room": "A204",
+  "semester": "Semester 4 (Spring 2025/26)",
+  "status": "Active",
+  "description": "Networks covers computer network architecture, layered protocols, routing, switching, transport services, wireless networks, and basic network security practices.",
+  "overview": {
+    "learningOutcomes": [
+      "Describe layered network architectures and common protocols.",
+      "Configure and reason about IP addressing and routing.",
+      "Evaluate transport reliability and congestion control."
+    ],
+    "topics": ["OSI and TCP/IP", "IP addressing", "Routing", "Transport protocols", "Wireless networks"],
+    "gradingBreakdown": "Quizzes 20%, Labs 30%, Exams 50%"
+  },
+  "courseInfo": [
+    { "id": "office-hours", "label": "Office Hours", "value": "Mon 13:00 - 14:00, Wed 11:00 - 12:00 (A204)" },
+    { "id": "consultation", "label": "Consultation", "value": "besnik.shala@uni-pr.edu - By appointment" },
+    { "id": "grading-breakdown", "label": "Grading Breakdown", "value": "Quizzes 20%, Labs 30%, Exams 50%" }
+  ],
+  "materials": [
+    { "id": "cs306-material-1", "title": "Routing Protocols Slides", "type": "Slides", "updatedAt": "21 Apr 2026", "size": "1.9 MB" },
+    { "id": "cs306-material-2", "title": "Subnetting Practice", "type": "Worksheet", "updatedAt": "18 Apr 2026", "size": "540 KB" },
+    { "id": "cs306-material-3", "title": "Wireshark Lab Manual", "type": "Lab", "updatedAt": "14 Apr 2026", "size": "1.3 MB" }
+  ],
+  "attendance": {
+    "requiredPercentage": 75,
+    "sessionsHeld": 17,
+    "sessionsAttended": 15,
+    "status": "On track",
+    "summary": [
+      { "label": "Lectures attended", "value": "11 of 12" },
+      { "label": "Labs attended", "value": "4 of 5" },
+      { "label": "Absences remaining", "value": "3" }
+    ],
+    "records": [
+      { "id": "cs306-att-1", "date": "23 Apr 2026", "type": "Lecture", "status": "Present" },
+      { "id": "cs306-att-2", "date": "21 Apr 2026", "type": "Lecture", "status": "Present" },
+      { "id": "cs306-att-3", "date": "16 Apr 2026", "type": "Lab", "status": "Present" }
+    ]
+  },
+  "grades": {
+    "scale": "10-point",
+    "breakdown": [
+      { "component": "Quizzes", "weight": 20 },
+      { "component": "Labs", "weight": 30 },
+      { "component": "Exams", "weight": 50 }
+    ],
+    "records": [
+      { "id": "cs306-grade-1", "title": "Quiz 2", "type": "Quiz", "score": "8/10", "weight": "10%", "date": "14 Apr 2026", "status": "Published" },
+      { "id": "cs306-grade-2", "title": "Routing Lab", "type": "Lab", "score": "8.7/10", "weight": "15%", "date": "18 Apr 2026", "status": "Published" }
+    ]
+  },
+  "assessments": [
+    { "id": "cs306-quiz-3", "title": "Quiz 3", "type": "Quiz", "date": "26 Apr 2026", "time": "12:00", "statusLabel": "Today", "tone": "blue", "mode": "Individual", "description": "Routing and transport protocols quiz." },
+    { "id": "cs306-lab-routing", "title": "Routing Lab Report", "type": "Lab Work", "date": "03 May 2026", "time": "23:59", "statusLabel": "7 days left", "tone": "blue", "mode": "Pair", "description": "Static and dynamic routing lab report." }
+  ],
+  "exams": [
+    { "id": "cs306-midterm", "title": "Midterm Exam", "type": "Exam", "date": "06 May 2026", "time": "12:00", "statusLabel": "10 days left", "tone": "orange", "duration": "90 min", "room": "A204" },
+    { "id": "cs306-final", "title": "Final Exam", "type": "Exam", "date": "17 Jun 2026", "time": "11:00", "statusLabel": "Scheduled", "tone": "orange", "duration": "120 min", "room": "Main Hall" }
+  ],
+  "announcements": [
+    { "id": "cs306-ann-1", "title": "Quiz 3 Reminder", "body": "Quiz 3 covers routing tables, transport reliability, and congestion control.", "date": "23 Apr 2026" },
+    { "id": "cs306-ann-2", "title": "Wireshark Lab Files", "body": "Lab capture files have been uploaded to the materials section.", "date": "20 Apr 2026" }
+  ],
+  "deadlines": [
+    { "id": "cs306-quiz-3", "title": "Quiz 3", "type": "Next Exam", "date": "26 Apr 2026", "time": "12:00", "statusLabel": "Today", "tone": "blue" },
+    { "id": "cs306-lab-routing", "title": "Routing Lab Report", "type": "Lab", "date": "03 May 2026", "time": "23:59", "statusLabel": "7 days left", "tone": "blue" }
+  ]
+}

@@ -4,15 +4,18 @@ declare(strict_types=1);
 
 use App\Controllers\AuthController;
 use App\Controllers\HealthController;
+use App\Controllers\StudentAttendanceController;
 use App\Controllers\StudentCoursesController;
 use App\Controllers\StudentDashboardController;
 use App\Controllers\StudentProfileController;
 use App\Core\Router;
+use App\Repositories\Mock\MockStudentAttendanceRepository;
 use App\Repositories\Mock\MockStudentCoursesRepository;
 use App\Repositories\Mock\MockStudentDashboardRepository;
 use App\Repositories\Mock\MockStudentProfileRepository;
 use App\Repositories\Mock\MockUserRepository;
 use App\Services\AuthService;
+use App\Services\StudentAttendanceService;
 use App\Services\StudentCoursesService;
 use App\Services\StudentDashboardService;
 use App\Services\StudentProfileService;
@@ -47,6 +50,12 @@ return static function (Router $router): void {
 
     $router->get('/api/student/courses', [$studentCoursesController, 'index']);
     $router->get('/api/student/courses/{courseId}', [$studentCoursesController, 'show']);
+
+    $studentAttendanceController = new StudentAttendanceController(
+        new StudentAttendanceService(new MockStudentAttendanceRepository()),
+    );
+
+    $router->get('/api/student/attendance', [$studentAttendanceController, 'show']);
 
     $studentProfileService = new StudentProfileService($studentProfileRepository);
     $studentProfileController = new StudentProfileController(

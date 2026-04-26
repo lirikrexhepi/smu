@@ -1,0 +1,287 @@
+{
+  "studentKey": "s1002",
+  "semester": "Semester 6 (Spring 2025/26)",
+  "academicYear": "Spring 2025/26",
+  "week": {
+    "startDate": "2026-05-12",
+    "endDate": "2026-05-18",
+    "label": "May 12 - May 18, 2026"
+  },
+  "summary": {
+    "overallAttendance": 90,
+    "presentSessions": 72,
+    "totalSessions": 80,
+    "absences": 5,
+    "lateRecords": 3,
+    "comparisonVsLast4Weeks": {
+      "value": 2,
+      "direction": "up",
+      "label": "vs last 4 weeks"
+    }
+  },
+  "courseSummaries": [
+    {
+      "courseId": "cs308",
+      "overallAttendance": 93,
+      "presentSessions": 14,
+      "totalSessions": 15,
+      "absences": 1,
+      "lateRecords": 0,
+      "comparisonVsLast4Weeks": {
+        "value": 2,
+        "direction": "up",
+        "label": "vs last 4 weeks"
+      }
+    },
+    {
+      "courseId": "cs306",
+      "overallAttendance": 89,
+      "presentSessions": 15,
+      "totalSessions": 17,
+      "absences": 1,
+      "lateRecords": 1,
+      "comparisonVsLast4Weeks": {
+        "value": 1,
+        "direction": "up",
+        "label": "vs last 4 weeks"
+      }
+    },
+    {
+      "courseId": "cs310",
+      "overallAttendance": 0,
+      "presentSessions": 0,
+      "totalSessions": 0,
+      "absences": 0,
+      "lateRecords": 0,
+      "comparisonVsLast4Weeks": {
+        "value": 0,
+        "direction": "flat",
+        "label": "vs last 4 weeks"
+      }
+    },
+    {
+      "courseId": "cs304",
+      "overallAttendance": 90,
+      "presentSessions": 16,
+      "totalSessions": 18,
+      "absences": 1,
+      "lateRecords": 1,
+      "comparisonVsLast4Weeks": {
+        "value": 3,
+        "direction": "up",
+        "label": "vs last 4 weeks"
+      }
+    },
+    {
+      "courseId": "math204",
+      "overallAttendance": 87,
+      "presentSessions": 16,
+      "totalSessions": 18,
+      "absences": 2,
+      "lateRecords": 0,
+      "comparisonVsLast4Weeks": {
+        "value": 1,
+        "direction": "up",
+        "label": "vs last 4 weeks"
+      }
+    }
+  ],
+  "lastRecorded": {
+    "courseId": "cs308",
+    "date": "2026-05-16",
+    "dateLabel": "Today",
+    "time": "12:00 - 13:30",
+    "status": "recorded",
+    "statusLabel": "Recorded"
+  },
+  "weeklySchedule": [
+    {
+      "date": "2026-05-12",
+      "dayName": "Monday",
+      "dayShort": "Mon",
+      "dateLabel": "12 May",
+      "isToday": false,
+      "blocks": [
+        {
+          "id": "s1002-wk-cs304-mon",
+          "courseId": "cs304",
+          "time": "10:00 - 11:30",
+          "startTime": "10:00",
+          "endTime": "11:30",
+          "room": "B101",
+          "type": "Lecture",
+          "status": "present",
+          "tone": "blue"
+        }
+      ]
+    },
+    {
+      "date": "2026-05-13",
+      "dayName": "Tuesday",
+      "dayShort": "Tue",
+      "dateLabel": "13 May",
+      "isToday": false,
+      "blocks": [
+        {
+          "id": "s1002-wk-cs306-tue",
+          "courseId": "cs306",
+          "time": "08:00 - 09:30",
+          "startTime": "08:00",
+          "endTime": "09:30",
+          "room": "A204",
+          "type": "Lecture",
+          "status": "late",
+          "tone": "green"
+        },
+        {
+          "id": "s1002-wk-math204-tue",
+          "courseId": "math204",
+          "time": "14:00 - 15:30",
+          "startTime": "14:00",
+          "endTime": "15:30",
+          "room": "C203",
+          "type": "Lecture",
+          "status": "present",
+          "tone": "orange"
+        }
+      ]
+    },
+    {
+      "date": "2026-05-14",
+      "dayName": "Wednesday",
+      "dayShort": "Wed",
+      "dateLabel": "14 May",
+      "isToday": false,
+      "blocks": [
+        {
+          "id": "s1002-wk-cs304-wed",
+          "courseId": "cs304",
+          "time": "10:00 - 11:30",
+          "startTime": "10:00",
+          "endTime": "11:30",
+          "room": "B101",
+          "type": "Lecture",
+          "status": "present",
+          "tone": "blue"
+        },
+        {
+          "id": "s1002-wk-cs308-wed",
+          "courseId": "cs308",
+          "time": "16:00 - 17:30",
+          "startTime": "16:00",
+          "endTime": "17:30",
+          "room": "D110",
+          "type": "Lecture",
+          "status": "present",
+          "tone": "red"
+        }
+      ]
+    },
+    {
+      "date": "2026-05-15",
+      "dayName": "Thursday",
+      "dayShort": "Thu",
+      "dateLabel": "15 May",
+      "isToday": false,
+      "blocks": [
+        {
+          "id": "s1002-wk-cs310-thu",
+          "courseId": "cs310",
+          "time": "14:00 - 15:30",
+          "startTime": "14:00",
+          "endTime": "15:30",
+          "room": "B210",
+          "type": "Workshop",
+          "status": "scheduled",
+          "tone": "teal"
+        }
+      ]
+    },
+    {
+      "date": "2026-05-16",
+      "dayName": "Friday",
+      "dayShort": "Fri",
+      "dateLabel": "16 May",
+      "isToday": true,
+      "blocks": [
+        {
+          "id": "s1002-wk-cs308-fri",
+          "courseId": "cs308",
+          "time": "12:00 - 13:30",
+          "startTime": "12:00",
+          "endTime": "13:30",
+          "room": "D110",
+          "type": "Lecture",
+          "status": "recorded",
+          "statusLabel": "Recorded",
+          "tone": "red"
+        },
+        {
+          "id": "s1002-wk-math204-fri",
+          "courseId": "math204",
+          "time": "14:00 - 15:30",
+          "startTime": "14:00",
+          "endTime": "15:30",
+          "room": "C203",
+          "type": "Lecture",
+          "status": "scheduled",
+          "tone": "orange"
+        }
+      ]
+    },
+    {
+      "date": "2026-05-17",
+      "dayName": "Saturday",
+      "dayShort": "Sat",
+      "dateLabel": "17 May",
+      "isToday": false,
+      "blocks": []
+    },
+    {
+      "date": "2026-05-18",
+      "dayName": "Sunday",
+      "dayShort": "Sun",
+      "dateLabel": "18 May",
+      "isToday": false,
+      "blocks": []
+    }
+  ],
+  "history": [
+    {
+      "id": "s1002-history-1",
+      "courseId": "cs308",
+      "date": "May 16, 2026 (Fri)",
+      "dateIso": "2026-05-16",
+      "time": "12:00 - 13:30",
+      "type": "Lecture",
+      "result": "present"
+    },
+    {
+      "id": "s1002-history-2",
+      "courseId": "cs304",
+      "date": "May 14, 2026 (Wed)",
+      "dateIso": "2026-05-14",
+      "time": "10:00 - 11:30",
+      "type": "Lecture",
+      "result": "present"
+    },
+    {
+      "id": "s1002-history-3",
+      "courseId": "cs306",
+      "date": "May 13, 2026 (Tue)",
+      "dateIso": "2026-05-13",
+      "time": "08:00 - 09:30",
+      "type": "Lecture",
+      "result": "late"
+    },
+    {
+      "id": "s1002-history-4",
+      "courseId": "math204",
+      "date": "May 13, 2026 (Tue)",
+      "dateIso": "2026-05-13",
+      "time": "14:00 - 15:30",
+      "type": "Lecture",
+      "result": "present"
+    }
+  ]
+}

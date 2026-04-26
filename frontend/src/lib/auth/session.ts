@@ -6,6 +6,10 @@ export function storeAuthUser(user: AuthUser) {
   window.localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user))
 }
 
+export function clearAuthUser() {
+  window.localStorage.removeItem(AUTH_USER_KEY)
+}
+
 export function getStoredAuthUser(): AuthUser | null {
   const stored = window.localStorage.getItem(AUTH_USER_KEY)
 

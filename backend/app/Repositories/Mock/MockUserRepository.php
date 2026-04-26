@@ -17,7 +17,7 @@ final class MockUserRepository implements UserRepositoryInterface
     public function __construct()
     {
         $this->users = [
-            new User('stu-1001', 'Alex Morgan', 'student', 'alex.morgan@sems.edu', 'S1001', 'student123', 'Faculty of Information Sciences', 'Computer Science BSc'),
+            new User('stu-1001', 'Luri Morina', 'student', 'luri.morina@sems.edu', 'luri', '1234', 'Faculty of Electrical and Computer Engineering', 'Computer Engineering BScs'),
             new User('stu-1002', 'Maya Patel', 'student', 'maya.patel@sems.edu', 'S1002', 'student123', 'Faculty of Information Sciences', 'Information Systems BSc'),
             new User('stu-1003', 'Daniel Kovacs', 'student', 'daniel.kovacs@sems.edu', 'S1003', 'student123', 'Faculty of Information Sciences', 'Software Engineering BSc'),
             new User('stu-1004', 'Nora Williams', 'student', 'nora.williams@sems.edu', 'S1004', 'student123', 'Faculty of Information Sciences', 'Data Science BSc'),

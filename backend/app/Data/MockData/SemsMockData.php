@@ -58,6 +58,14 @@ final class SemsMockData
     /**
      * @return array<string, mixed>
      */
+    public static function studentAttendance(string $studentKey): array
+    {
+        return self::readStudentJson($studentKey, 'attendance.json');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
     public static function course(string $courseId): array
     {
         return self::readJson(__DIR__ . '/courses/' . self::safeCourseId($courseId) . '.json');

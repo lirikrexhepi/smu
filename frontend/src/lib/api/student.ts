@@ -4,6 +4,7 @@ import type {
   StudentCoursesOverview,
   StudentAttendance,
   StudentDashboardSummary,
+  StudentGradesTranscript,
   StudentProfile,
   StudentProfileUpdate,
 } from '@/types/student'
@@ -41,6 +42,23 @@ export function getStudentAttendance(
   }
 
   return apiGet<StudentAttendance>(`/api/student/attendance?${params.toString()}`)
+}
+
+export function getStudentGradesTranscript(
+  studentKey: string,
+  filters: { semester?: string; courseId?: string } = {},
+) {
+  const params = new URLSearchParams({ studentKey })
+
+  if (filters.semester) {
+    params.set('semester', filters.semester)
+  }
+
+  if (filters.courseId && filters.courseId !== 'all') {
+    params.set('courseId', filters.courseId)
+  }
+
+  return apiGet<StudentGradesTranscript>(`/api/student/grades-transcript?${params.toString()}`)
 }
 
 export function getStudentProfile(studentKey: string) {

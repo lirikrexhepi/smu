@@ -66,6 +66,7 @@ final class MockStudentCoursesRepository implements StudentCoursesRepositoryInte
             'status' => (string) ($enrollment['enrollmentStatus'] ?? 'active'),
             'statusLabel' => (string) ($enrollment['enrollmentStatusLabel'] ?? $this->statusLabel((string) ($enrollment['enrollmentStatus'] ?? 'active'))),
             'currentGrade' => (string) ($enrollment['currentGrade'] ?? ''),
+            'currentGradePoints' => (string) ($enrollment['currentGrade'] ?? ''),
             'attendancePercentage' => (int) ($enrollment['attendancePercentage'] ?? 0),
             'nextImportantEventId' => (string) ($enrollment['nextImportantEventId'] ?? ''),
             'enrolledAt' => (string) ($enrollment['enrolledAt'] ?? ''),
@@ -120,6 +121,7 @@ final class MockStudentCoursesRepository implements StudentCoursesRepositoryInte
             'enrollmentStatus' => $status,
             'enrollmentStatusLabel' => (string) ($enrollment['enrollmentStatusLabel'] ?? $this->statusLabel($status)),
             'currentGrade' => (string) ($enrollment['currentGrade'] ?? ''),
+            'currentGradePoints' => (string) ($enrollment['currentGrade'] ?? ''),
             'attendancePercentage' => (int) ($enrollment['attendancePercentage'] ?? 0),
             'nextImportantEvent' => $this->resolveEvent($course, (string) ($enrollment['nextImportantEventId'] ?? '')),
         ];
@@ -307,6 +309,7 @@ final class MockStudentCoursesRepository implements StudentCoursesRepositoryInte
     private function gradesWithEnrollment(array $grades, array $enrollment): array
     {
         $grades['currentGrade'] = (string) ($enrollment['currentGrade'] ?? ($grades['currentGrade'] ?? ''));
+        $grades['currentGradePoints'] = (string) ($enrollment['currentGrade'] ?? ($grades['currentGradePoints'] ?? ''));
 
         return $grades;
     }

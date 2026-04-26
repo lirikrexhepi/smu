@@ -1,0 +1,52 @@
+[
+  {
+    "id": "stu-1001",
+    "role": "student",
+    "institutionId": "luri",
+    "password": "1234"
+  },
+  {
+    "id": "stu-1002",
+    "role": "student",
+    "institutionId": "S1002",
+    "password": "1234"
+  },
+  {
+    "id": "stu-1003",
+    "role": "student",
+    "institutionId": "S1003",
+    "password": "1234"
+  },
+  {
+    "id": "stu-1004",
+    "role": "student",
+    "institutionId": "S1004",
+    "password": "1234"
+  },
+  {
+    "id": "stu-1005",
+    "role": "student",
+    "institutionId": "S1005",
+    "password": "1234"
+  },
+  {
+    "id": "prof-2001",
+    "name": "Prof. Besnik Shala",
+    "role": "professor",
+    "email": "besnik.shala@sems.edu",
+    "institutionId": "P2001",
+    "password": "1234",
+    "faculty": "Fakulteti i Inxhinierise Elektrike dhe Kompjuterike",
+    "department": "Inxhinieri Kompjuterike dhe Softuerike"
+  },
+  {
+    "id": "prof-2002",
+    "name": "Prof. Majlinda Zeka",
+    "role": "professor",
+    "email": "majlinda.zeka@sems.edu",
+    "institutionId": "P2002",
+    "password": "1234",
+    "faculty": "Fakulteti i Inxhinierise Elektrike dhe Kompjuterike",
+    "department": "Inxhinieri Kompjuterike dhe Softuerike"
+  }
+]

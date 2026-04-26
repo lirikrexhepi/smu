@@ -1,0 +1,31 @@
+{
+  "studentId": "202200125",
+  "fullName": "Daniel Kovacs",
+  "initials": "DK",
+  "avatarUrl": null,
+  "status": "Active",
+  "studentStatusLabel": "Active Student",
+  "faculty": "Faculty of Information Sciences",
+  "department": "Software Engineering BSc",
+  "program": "Bachelor of Science",
+  "yearOfStudy": "2nd Year",
+  "semester": "Semester 4",
+  "academicYear": "25/26 Spring",
+  "currentGpa": "3.41",
+  "creditsEarned": "70",
+  "creditsRequired": "120",
+  "academicStanding": "Good Standing",
+  "email": "daniel.kovacs@sems.edu",
+  "phone": "+383 44 345 678",
+  "address": "Rr. Deshmoret e Kombit, 10000 Prishtine, Kosovo",
+  "dateOfBirth": "2002-11-03",
+  "gender": "Male",
+  "nationality": "Hungarian",
+  "personalNumber": "1002456791",
+  "emergencyContact": {
+    "name": "Eva Kovacs",
+    "relationship": "Mother",
+    "phone": "+383 44 765 432"
+  },
+  "updatedAt": null
+}

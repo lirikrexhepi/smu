@@ -1,13 +1,64 @@
 export type StudentDashboardMetric = {
+  id: string
   label: string
   value: string
+  helper: string
   tone: 'blue' | 'green' | 'orange' | 'purple'
+}
+
+export type StudentDashboardClass = {
+  id: string
+  time: string
+  courseCode: string
+  courseName: string
+  room: string
+  type: string
+  tone: StudentDashboardMetric['tone']
+}
+
+export type StudentDashboardDeadline = {
+  id: string
+  title: string
+  courseCode: string
+  date: string
+  statusLabel: string
+  tone: StudentDashboardMetric['tone']
+}
+
+export type StudentDashboardGrade = {
+  id: string
+  course: string
+  assessment: string
+  type: string
+  grade: string
+  date: string
+  tone: 'blue' | 'green' | 'orange' | 'purple'
+}
+
+export type StudentDashboardAttendanceWarning = {
+  courseCode: string
+  courseName: string
+  rate: number
+  requiredRate: number
+  message: string
+  detail: string
+}
+
+export type StudentDashboardAttendanceSummary = {
+  courseName: string
+  rate: number
 }
 
 export type StudentDashboardSummary = {
   studentName: string
   semester: string
+  academicTerm: string
   metrics: StudentDashboardMetric[]
+  todaysClasses: StudentDashboardClass[]
+  upcomingDeadlines: StudentDashboardDeadline[]
+  latestGrades: StudentDashboardGrade[]
+  attendanceWarning: StudentDashboardAttendanceWarning
+  attendanceSummary: StudentDashboardAttendanceSummary[]
 }
 
 export type StudentEmergencyContact = {

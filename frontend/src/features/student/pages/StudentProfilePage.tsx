@@ -43,7 +43,7 @@ const tabs: Array<{ id: ProfileTab; label: string }> = [
 
 export function StudentProfilePage() {
   const storedUser = getStoredAuthUser()
-  const studentKey = storedUser?.institutionId ?? 'luri'
+  const studentKey = storedUser?.role === 'student' ? storedUser.institutionId : null
   const [profile, setProfile] = useState<StudentProfile | null>(null)
   const [form, setForm] = useState<StudentProfileUpdate | null>(null)
   const [activeTab, setActiveTab] = useState<ProfileTab>('personal')
@@ -55,6 +55,14 @@ export function StudentProfilePage() {
   const avatarInputRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
+    if (!studentKey) {
+      setProfile(null)
+      setForm(null)
+      setErrorMessage('Login as a student to load profile data')
+      setStatusMessage('Profile unavailable')
+      return
+    }
+
     getStudentProfile(studentKey)
       .then((response) => {
         setProfile(response.data)
@@ -100,7 +108,7 @@ export function StudentProfilePage() {
   }
 
   async function saveProfile() {
-    if (!form) {
+    if (!form || !studentKey) {
       return
     }
 
@@ -122,7 +130,7 @@ export function StudentProfilePage() {
   }
 
   async function uploadAvatar(file: File | undefined) {
-    if (!file) {
+    if (!file || !studentKey) {
       return
     }
 

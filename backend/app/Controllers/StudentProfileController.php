@@ -10,6 +10,7 @@ use App\DTO\StudentProfileUpdateData;
 use App\Services\StudentProfileService;
 use App\Validators\StudentProfileAvatarValidator;
 use App\Validators\StudentProfileUpdateValidator;
+use RuntimeException;
 
 final class StudentProfileController
 {
@@ -25,10 +26,26 @@ final class StudentProfileController
      */
     public function show(Request $request, array $params = []): Response
     {
+        $studentKey = $this->studentKey($request);
+
+        if ($studentKey === null) {
+            return Response::error('Student key is required', 422, [
+                'studentKey' => ['Login as a student or provide studentKey.'],
+            ]);
+        }
+
+        try {
+            $profile = $this->profileService->profile($studentKey)->toArray();
+        } catch (RuntimeException $exception) {
+            return Response::error('Student profile data not found', 404, [
+                'studentKey' => [$exception->getMessage()],
+            ]);
+        }
+
         return Response::success(
-            $this->profileService->profile($this->studentKey($request))->toArray(),
+            $profile,
             'Student profile loaded',
-            ['source' => 'mock-repository'],
+            ['source' => 'json-mock-repository', 'studentKey' => $studentKey],
         );
     }
 
@@ -43,12 +60,28 @@ final class StudentProfileController
             return Response::error('Validation failed', 422, $errors);
         }
 
+        $studentKey = $this->studentKey($request);
+
+        if ($studentKey === null) {
+            return Response::error('Student key is required', 422, [
+                'studentKey' => ['Login as a student or provide studentKey.'],
+            ]);
+        }
+
+        try {
+            $profile = $this->profileService
+                ->updateProfile($studentKey, StudentProfileUpdateData::fromArray($request->body()))
+                ->toArray();
+        } catch (RuntimeException $exception) {
+            return Response::error('Student profile data not found', 404, [
+                'studentKey' => [$exception->getMessage()],
+            ]);
+        }
+
         return Response::success(
-            $this->profileService
-                ->updateProfile($this->studentKey($request), StudentProfileUpdateData::fromArray($request->body()))
-                ->toArray(),
+            $profile,
             'Student profile updated',
-            ['source' => 'mock-repository', 'auditAction' => 'profile.update'],
+            ['source' => 'json-mock-repository', 'auditAction' => 'profile.update', 'studentKey' => $studentKey],
         );
     }
 
@@ -68,17 +101,36 @@ final class StudentProfileController
             return Response::error('Validation failed', 422, ['avatar' => ['Profile image is required.']]);
         }
 
+        $studentKey = $this->studentKey($request);
+
+        if ($studentKey === null) {
+            return Response::error('Student key is required', 422, [
+                'studentKey' => ['Login as a student or provide studentKey.'],
+            ]);
+        }
+
+        try {
+            $profile = $this->profileService
+                ->updateAvatar($studentKey, $avatar, $this->avatarValidator->detectedMimeType($avatar))
+                ->toArray();
+        } catch (RuntimeException $exception) {
+            return Response::error('Student profile data not found', 404, [
+                'studentKey' => [$exception->getMessage()],
+            ]);
+        }
+
         return Response::success(
-            $this->profileService
-                ->updateAvatar($this->studentKey($request), $avatar, $this->avatarValidator->detectedMimeType($avatar))
-                ->toArray(),
+            $profile,
             'Student profile image updated',
-            ['source' => 'mock-repository', 'auditAction' => 'profile.avatar.update'],
+            ['source' => 'json-mock-repository', 'auditAction' => 'profile.avatar.update', 'studentKey' => $studentKey],
         );
     }
 
-    private function studentKey(Request $request): string
+    private function studentKey(Request $request): ?string
     {
-        return (string) ($request->query()['studentKey'] ?? $request->header('x-sems-student-key', 'luri'));
+        $studentKey = (string) ($request->query()['studentKey'] ?? $request->header('x-sems-student-key', ''));
+        $studentKey = trim($studentKey);
+
+        return $studentKey === '' ? null : $studentKey;
     }
 }

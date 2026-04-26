@@ -1,0 +1,31 @@
+{
+  "studentId": "202200127",
+  "fullName": "Leo Schneider",
+  "initials": "LS",
+  "avatarUrl": null,
+  "status": "Active",
+  "studentStatusLabel": "Active Student",
+  "faculty": "Faculty of Information Sciences",
+  "department": "Cybersecurity BSc",
+  "program": "Bachelor of Science",
+  "yearOfStudy": "4th Year",
+  "semester": "Semester 8",
+  "academicYear": "25/26 Spring",
+  "currentGpa": "3.58",
+  "creditsEarned": "112",
+  "creditsRequired": "120",
+  "academicStanding": "Good Standing",
+  "email": "leo.schneider@sems.edu",
+  "phone": "+383 44 567 890",
+  "address": "Rr. Tringe Smajli, 10000 Prishtine, Kosovo",
+  "dateOfBirth": "2000-06-21",
+  "gender": "Male",
+  "nationality": "German",
+  "personalNumber": "1002456793",
+  "emergencyContact": {
+    "name": "Marta Schneider",
+    "relationship": "Sister",
+    "phone": "+383 44 543 210"
+  },
+  "updatedAt": null
+}

@@ -13,8 +13,8 @@ final class StudentDashboardService
     {
     }
 
-    public function summary(): StudentDashboardSummaryData
+    public function summary(string $studentKey): StudentDashboardSummaryData
     {
-        return $this->repository->getSummary();
+        return $this->repository->getSummary($studentKey);
     }
 }

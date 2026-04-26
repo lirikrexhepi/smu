@@ -7,24 +7,17 @@ namespace App\DTO;
 final readonly class StudentDashboardSummaryData
 {
     /**
-     * @param list<array{label: string, value: string, tone: string}> $metrics
+     * @param array<string, mixed> $data
      */
-    public function __construct(
-        public string $studentName,
-        public string $semester,
-        public array $metrics,
-    ) {
+    public function __construct(private array $data)
+    {
     }
 
     /**
-     * @return array{studentName: string, semester: string, metrics: list<array{label: string, value: string, tone: string}>}
+     * @return array<string, mixed>
      */
     public function toArray(): array
     {
-        return [
-            'studentName' => $this->studentName,
-            'semester' => $this->semester,
-            'metrics' => $this->metrics,
-        ];
+        return $this->data;
     }
 }

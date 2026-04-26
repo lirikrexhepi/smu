@@ -28,10 +28,12 @@ export function DashboardLayout({ role, portalLabel, userLabel, navItems }: Dash
   const navigate = useNavigate()
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [storedUser, setStoredUser] = useState<AuthUser | null>(() => getStoredAuthUser())
+  const [currentTerm, setCurrentTerm] = useState<string | null>(null)
   const displayUser = storedUser?.role === role ? storedUser : null
   const displayName = displayUser?.name ?? userLabel
   const displayFaculty = displayUser?.faculty ?? 'Faculty of Information Sciences'
   const displayDepartment = displayUser?.department ?? 'Student Education Management System'
+  const displayCurrentTerm = role === 'student' ? currentTerm ?? 'Current student term' : 'Spring 2026'
   const profileSubtext = displayUser
     ? `${displayUser.institutionId} · ${displayUser.role === 'professor' ? 'Professor' : 'Student'}`
     : portalLabel
@@ -80,6 +82,7 @@ export function DashboardLayout({ role, portalLabel, userLabel, navItems }: Dash
           avatarUrl: response.data.avatarUrl,
         }
 
+        setCurrentTerm(`${response.data.semester} · ${response.data.academicYear}`)
         setStoredUser(syncedUser)
         storeAuthUser(syncedUser)
       })
@@ -203,7 +206,7 @@ export function DashboardLayout({ role, portalLabel, userLabel, navItems }: Dash
               isSidebarCollapsed ? 'opacity-0' : 'opacity-100 delay-75',
             )}
           >
-            Spring 2026
+            {displayCurrentTerm}
           </p>
         </div>
       </aside>

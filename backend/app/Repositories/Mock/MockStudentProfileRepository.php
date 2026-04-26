@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories\Mock;
 
 use App\Core\UploadedFile;
+use App\Data\MockData\SemsMockData;
 use App\DTO\StudentProfileData;
 use App\DTO\StudentProfileUpdateData;
 use App\Repositories\Contracts\StudentProfileRepositoryInterface;
@@ -16,7 +17,7 @@ final class MockStudentProfileRepository implements StudentProfileRepositoryInte
 
     public function __construct(?string $storageDirectory = null, ?string $publicUploadDirectory = null)
     {
-        $this->storageDirectory = $storageDirectory ?? dirname(__DIR__, 3) . '/storage/mock';
+        $this->storageDirectory = $storageDirectory ?? dirname(__DIR__, 3) . '/storage/mock/profiles';
         $this->publicUploadDirectory = $publicUploadDirectory ?? dirname(__DIR__, 3) . '/public/uploads/profiles';
     }
 
@@ -89,11 +90,11 @@ final class MockStudentProfileRepository implements StudentProfileRepositoryInte
             $decoded = $content === false ? null : json_decode($content, true);
 
             if (is_array($decoded)) {
-                return array_replace_recursive($this->defaultProfile(), $decoded);
+                return array_replace_recursive($this->defaultProfile($studentKey), $decoded);
             }
         }
 
-        return $this->defaultProfile();
+        return $this->defaultProfile($studentKey);
     }
 
     /**
@@ -119,39 +120,9 @@ final class MockStudentProfileRepository implements StudentProfileRepositoryInte
     /**
      * @return array<string, mixed>
      */
-    private function defaultProfile(): array
+    private function defaultProfile(string $studentKey): array
     {
-        return [
-            'studentId' => '202200123',
-            'fullName' => 'Luri Morina',
-            'initials' => 'LM',
-            'avatarUrl' => null,
-            'status' => 'Active',
-            'studentStatusLabel' => 'Active Student',
-            'faculty' => 'Fakulteti i Inxhinierise Elektrike dhe Kompjuterike',
-            'department' => 'Computer Engineering',
-            'program' => 'Bachelor of Science',
-            'yearOfStudy' => '2nd Year',
-            'semester' => 'Semester 4',
-            'academicYear' => '25/26 Spring',
-            'currentGpa' => '3.65',
-            'creditsEarned' => '72',
-            'creditsRequired' => '120',
-            'academicStanding' => 'Good Standing',
-            'email' => 'luri.morina@uni.edu',
-            'phone' => '+383 44 123 456',
-            'address' => 'Rr. Agim Ramadani, 10000 Prishtine, Kosovo',
-            'dateOfBirth' => '2002-04-18',
-            'gender' => 'Male',
-            'nationality' => 'Kosovar',
-            'personalNumber' => '1002456789',
-            'emergencyContact' => [
-                'name' => 'Arben Morina',
-                'relationship' => 'Father',
-                'phone' => '+383 44 987 654',
-            ],
-            'updatedAt' => null,
-        ];
+        return SemsMockData::studentProfile($studentKey);
     }
 
     private function initials(string $name): string
@@ -168,7 +139,7 @@ final class MockStudentProfileRepository implements StudentProfileRepositoryInte
 
     private function safeStudentKey(string $studentKey): string
     {
-        return preg_replace('/[^A-Za-z0-9_-]/', '-', strtolower(trim($studentKey))) ?: 'luri';
+        return preg_replace('/[^A-Za-z0-9_-]/', '-', strtolower(trim($studentKey))) ?: 'unknown-student';
     }
 
     private function extensionForMimeType(string $mimeType): string

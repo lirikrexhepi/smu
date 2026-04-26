@@ -1,10 +1,13 @@
 import {
   BookOpen,
   CalendarCheck,
+  CircleHelp,
   ClipboardCheck,
   GraduationCap,
   LayoutDashboard,
+  MessageSquare,
   Shield,
+  UserRound,
   Users,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -19,7 +22,10 @@ export const studentNavItems: NavItem[] = [
   { label: 'Dashboard', to: '/student/dashboard', icon: LayoutDashboard },
   { label: 'Courses', to: '/student/courses', icon: BookOpen },
   { label: 'Attendance', to: '/student/attendance', icon: CalendarCheck },
-  { label: 'Grades', to: '/student/grades', icon: ClipboardCheck },
+  { label: 'Grades & Transcript', to: '/student/grades', icon: ClipboardCheck },
+  { label: 'Profile', to: '/student/profile', icon: UserRound },
+  { label: 'Communication', to: '/student/communication', icon: MessageSquare },
+  { label: 'Help', to: '/student/help', icon: CircleHelp },
 ]
 
 export const professorNavItems: NavItem[] = [

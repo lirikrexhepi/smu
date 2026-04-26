@@ -1,0 +1,39 @@
+{
+  "metrics": [
+    { "id": "todays-classes", "label": "Today's Classes", "value": "4", "helper": "Classes scheduled", "tone": "blue" },
+    { "id": "upcoming-deadlines", "label": "Upcoming Deadlines", "value": "5", "helper": "In the next 14 days", "tone": "orange" },
+    { "id": "attendance-status", "label": "Attendance Status", "value": "82%", "helper": "Overall attendance", "tone": "green" },
+    { "id": "current-gpa", "label": "Current GPA", "value": "3.41", "helper": "Out of 4.00", "tone": "purple" }
+  ],
+  "todaysClasses": [
+    { "id": "class-se210", "time": "08:30 - 10:00", "courseCode": "SE210", "courseName": "Software Design", "room": "Room B205", "type": "Lecture", "tone": "blue" },
+    { "id": "class-se232", "time": "10:30 - 12:00", "courseCode": "SE232", "courseName": "Web Engineering", "room": "Lab C101", "type": "Lab", "tone": "purple" },
+    { "id": "class-math212", "time": "13:00 - 14:30", "courseCode": "MATH212", "courseName": "Discrete Mathematics", "room": "Room A112", "type": "Lecture", "tone": "green" },
+    { "id": "class-se240", "time": "15:00 - 16:30", "courseCode": "SE240", "courseName": "Testing Fundamentals", "room": "Room B110", "type": "Seminar", "tone": "orange" }
+  ],
+  "upcomingDeadlines": [
+    { "id": "deadline-se210-uml", "title": "UML Assignment - Software Design (SE210)", "courseCode": "SE210", "date": "27 Apr 2026", "statusLabel": "Tomorrow", "tone": "orange" },
+    { "id": "deadline-se232-api", "title": "API Project - Web Engineering (SE232)", "courseCode": "SE232", "date": "01 May 2026", "statusLabel": "5 days left", "tone": "blue" },
+    { "id": "deadline-math212-problemset", "title": "Problem Set 6 - Discrete Mathematics (MATH212)", "courseCode": "MATH212", "date": "03 May 2026", "statusLabel": "7 days left", "tone": "orange" },
+    { "id": "deadline-se240-testplan", "title": "Test Plan Review - Testing Fundamentals (SE240)", "courseCode": "SE240", "date": "06 May 2026", "statusLabel": "10 days left", "tone": "blue" },
+    { "id": "deadline-se232-demo", "title": "Frontend Demo - Web Engineering (SE232)", "courseCode": "SE232", "date": "09 May 2026", "statusLabel": "13 days left", "tone": "orange" }
+  ],
+  "latestGrades": [
+    { "id": "grade-se210-design", "course": "Software Design (SE210)", "assessment": "Design Review", "type": "Project", "grade": "B+ (3.3)", "date": "17 Apr 2026", "tone": "blue" },
+    { "id": "grade-se232-lab", "course": "Web Engineering (SE232)", "assessment": "Lab 4", "type": "Lab", "grade": "A- (3.7)", "date": "13 Apr 2026", "tone": "green" },
+    { "id": "grade-math212-quiz", "course": "Discrete Mathematics (MATH212)", "assessment": "Quiz 3", "type": "Quiz", "grade": "B (3.0)", "date": "11 Apr 2026", "tone": "blue" }
+  ],
+  "attendanceWarning": {
+    "courseCode": "SE240",
+    "courseName": "Testing Fundamentals",
+    "rate": 72,
+    "requiredRate": 75,
+    "message": "You are at risk in Testing Fundamentals (SE240)",
+    "detail": "Your attendance is below the 75% requirement."
+  },
+  "attendanceSummary": [
+    { "courseName": "Overall Attendance", "rate": 82 },
+    { "courseName": "Software Design (SE210)", "rate": 85 },
+    { "courseName": "Web Engineering (SE232)", "rate": 88 }
+  ]
+}

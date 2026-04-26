@@ -15,6 +15,7 @@ final readonly class User
         public string $password,
         public string $faculty,
         public string $department,
+        public ?string $avatarUrl = null,
     ) {
     }
 }

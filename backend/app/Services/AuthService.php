@@ -38,6 +38,7 @@ final class AuthService
                 'institutionId' => $user->institutionId,
                 'faculty' => $user->faculty,
                 'department' => $user->department,
+                'avatarUrl' => $user->avatarUrl,
             ],
             'redirectPath' => $redirectPath,
         ];

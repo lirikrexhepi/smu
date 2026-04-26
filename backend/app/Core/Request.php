@@ -10,6 +10,7 @@ final class Request
      * @param array<string, string> $headers
      * @param array<string, mixed> $query
      * @param array<string, mixed> $body
+     * @param array<string, UploadedFile> $files
      * @param array<string, mixed> $server
      */
     public function __construct(
@@ -18,6 +19,7 @@ final class Request
         private readonly array $headers,
         private readonly array $query,
         private readonly array $body,
+        private readonly array $files,
         private readonly array $server,
     ) {
     }
@@ -40,6 +42,7 @@ final class Request
             self::headersFromServer($_SERVER),
             $_GET,
             $decodedBody,
+            self::filesFromGlobals($_FILES),
             $_SERVER,
         );
     }
@@ -70,6 +73,19 @@ final class Request
         return $this->body;
     }
 
+    /**
+     * @return array<string, UploadedFile>
+     */
+    public function files(): array
+    {
+        return $this->files;
+    }
+
+    public function file(string $name): ?UploadedFile
+    {
+        return $this->files[$name] ?? null;
+    }
+
     public function header(string $name, ?string $default = null): ?string
     {
         return $this->headers[strtolower($name)] ?? $default;
@@ -98,5 +114,31 @@ final class Request
         }
 
         return $headers;
+    }
+
+    /**
+     * @param array<string, mixed> $files
+     * @return array<string, UploadedFile>
+     */
+    private static function filesFromGlobals(array $files): array
+    {
+        $uploadedFiles = [];
+
+        foreach ($files as $fieldName => $file) {
+            if (!is_array($file) || is_array($file['name'] ?? null)) {
+                continue;
+            }
+
+            $uploadedFiles[$fieldName] = new UploadedFile(
+                $fieldName,
+                (string) ($file['name'] ?? ''),
+                (string) ($file['type'] ?? 'application/octet-stream'),
+                (string) ($file['tmp_name'] ?? ''),
+                (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE),
+                (int) ($file['size'] ?? 0),
+            );
+        }
+
+        return $uploadedFiles;
     }
 }

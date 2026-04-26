@@ -1,0 +1,35 @@
+{
+  "metrics": [
+    { "id": "todays-classes", "label": "Today's Classes", "value": "2", "helper": "Classes scheduled", "tone": "blue" },
+    { "id": "upcoming-deadlines", "label": "Upcoming Deadlines", "value": "3", "helper": "In the next 14 days", "tone": "orange" },
+    { "id": "attendance-status", "label": "Attendance Status", "value": "93%", "helper": "Overall attendance", "tone": "green" },
+    { "id": "current-gpa", "label": "Current GPA", "value": "3.82", "helper": "Out of 4.00", "tone": "purple" }
+  ],
+  "todaysClasses": [
+    { "id": "class-is402", "time": "09:00 - 10:30", "courseCode": "IS402", "courseName": "Enterprise Systems", "room": "Room C203", "type": "Lecture", "tone": "blue" },
+    { "id": "class-is418", "time": "13:00 - 14:30", "courseCode": "IS418", "courseName": "Business Intelligence", "room": "Lab A102", "type": "Lab", "tone": "purple" }
+  ],
+  "upcomingDeadlines": [
+    { "id": "deadline-is402-case", "title": "ERP Case Study - Enterprise Systems (IS402)", "courseCode": "IS402", "date": "29 Apr 2026", "statusLabel": "3 days left", "tone": "orange" },
+    { "id": "deadline-is418-dashboard", "title": "Analytics Dashboard - Business Intelligence (IS418)", "courseCode": "IS418", "date": "04 May 2026", "statusLabel": "8 days left", "tone": "blue" },
+    { "id": "deadline-mgmt310-report", "title": "Process Report - Management (MGMT310)", "courseCode": "MGMT310", "date": "07 May 2026", "statusLabel": "11 days left", "tone": "orange" }
+  ],
+  "latestGrades": [
+    { "id": "grade-is402-quiz", "course": "Enterprise Systems (IS402)", "assessment": "Quiz 4", "type": "Quiz", "grade": "A (4.0)", "date": "18 Apr 2026", "tone": "green" },
+    { "id": "grade-is418-lab", "course": "Business Intelligence (IS418)", "assessment": "Lab 5", "type": "Lab", "grade": "A- (3.7)", "date": "12 Apr 2026", "tone": "green" },
+    { "id": "grade-mgmt310-midterm", "course": "Management (MGMT310)", "assessment": "Midterm", "type": "Exam", "grade": "B+ (3.3)", "date": "09 Apr 2026", "tone": "blue" }
+  ],
+  "attendanceWarning": {
+    "courseCode": "MGMT310",
+    "courseName": "Management",
+    "rate": 79,
+    "requiredRate": 75,
+    "message": "Attendance is close to the minimum in Management (MGMT310)",
+    "detail": "You are above the requirement, but have limited absence room."
+  },
+  "attendanceSummary": [
+    { "courseName": "Overall Attendance", "rate": 93 },
+    { "courseName": "Enterprise Systems (IS402)", "rate": 96 },
+    { "courseName": "Business Intelligence (IS418)", "rate": 94 }
+  ]
+}

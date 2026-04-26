@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\DTO;
 
-final readonly class StudentDashboardSummaryData
+final readonly class StudentProfileData
 {
     /**
      * @param array<string, mixed> $data

@@ -1,0 +1,31 @@
+{
+  "studentId": "202200124",
+  "fullName": "Maya Patel",
+  "initials": "MP",
+  "avatarUrl": null,
+  "status": "Active",
+  "studentStatusLabel": "Active Student",
+  "faculty": "Faculty of Information Sciences",
+  "department": "Information Systems BSc",
+  "program": "Bachelor of Science",
+  "yearOfStudy": "3rd Year",
+  "semester": "Semester 6",
+  "academicYear": "25/26 Spring",
+  "currentGpa": "9.9",
+  "creditsEarned": "96",
+  "creditsRequired": "120",
+  "academicStanding": "Dean's List",
+  "email": "maya.patel@sems.edu",
+  "phone": "+383 44 234 567",
+  "address": "Rr. Eqrem Cabej, 10000 Prishtine, Kosovo",
+  "dateOfBirth": "2001-09-12",
+  "gender": "Female",
+  "nationality": "Kosovar",
+  "personalNumber": "1002456790",
+  "emergencyContact": {
+    "name": "Anita Patel",
+    "relationship": "Mother",
+    "phone": "+383 44 876 543"
+  },
+  "updatedAt": null
+}

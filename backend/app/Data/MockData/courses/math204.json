@@ -1,0 +1,85 @@
+{
+  "courseId": "math204",
+  "code": "MATH204",
+  "name": "Mathematics II",
+  "professor": {
+    "name": "Prof. Majlinda Zeka",
+    "email": "majlinda.zeka@uni-pr.edu",
+    "officeHours": "Mon 14:00 - 15:00, Wed 14:00 - 15:00",
+    "consultation": "By appointment"
+  },
+  "ects": 5,
+  "schedule": {
+    "days": ["Mon", "Wed"],
+    "daysLabel": "Mon, Wed",
+    "time": "16:00 - 17:30",
+    "room": "C205",
+    "label": "Mon, Wed 16:00 - 17:30"
+  },
+  "room": "C205",
+  "semester": "Semester 4 (Spring 2025/26)",
+  "status": "Active",
+  "description": "Mathematics II covers integral calculus, sequences and series, differential equations, and linear algebra applications for engineering students.",
+  "overview": {
+    "learningOutcomes": [
+      "Apply integral calculus to engineering problems.",
+      "Solve elementary differential equations.",
+      "Use matrix methods in applied systems."
+    ],
+    "topics": ["Integral calculus", "Series", "Differential equations", "Matrices", "Applications"],
+    "gradingBreakdown": "Midterm 35%, Final 45%, Homework 20%"
+  },
+  "courseInfo": [
+    { "id": "office-hours", "label": "Office Hours", "value": "Mon 14:00 - 15:00, Wed 14:00 - 15:00 (C205)" },
+    { "id": "consultation", "label": "Consultation", "value": "majlinda.zeka@uni-pr.edu - By appointment" },
+    { "id": "grading-breakdown", "label": "Grading Breakdown", "value": "Midterm 35%, Final 45%, Homework 20%" }
+  ],
+  "materials": [
+    { "id": "math204-material-1", "title": "Differential Equations Notes", "type": "Notes", "updatedAt": "19 Apr 2026", "size": "1.8 MB" },
+    { "id": "math204-material-2", "title": "Problem Set 6", "type": "Homework", "updatedAt": "21 Apr 2026", "size": "310 KB" },
+    { "id": "math204-material-3", "title": "Midterm Practice Problems", "type": "Practice", "updatedAt": "24 Apr 2026", "size": "720 KB" }
+  ],
+  "attendance": {
+    "requiredPercentage": 75,
+    "sessionsHeld": 18,
+    "sessionsAttended": 17,
+    "status": "On track",
+    "summary": [
+      { "label": "Lectures attended", "value": "17 of 18" },
+      { "label": "Absences remaining", "value": "4" },
+      { "label": "Required minimum", "value": "75%" }
+    ],
+    "records": [
+      { "id": "math204-att-1", "date": "22 Apr 2026", "type": "Lecture", "status": "Present" },
+      { "id": "math204-att-2", "date": "20 Apr 2026", "type": "Lecture", "status": "Present" },
+      { "id": "math204-att-3", "date": "15 Apr 2026", "type": "Lecture", "status": "Present" }
+    ]
+  },
+  "grades": {
+    "scale": "10-point",
+    "breakdown": [
+      { "component": "Midterm", "weight": 35 },
+      { "component": "Final", "weight": 45 },
+      { "component": "Homework", "weight": 20 }
+    ],
+    "records": [
+      { "id": "math204-grade-1", "title": "Homework 3", "type": "Homework", "score": "9/10", "weight": "5%", "date": "08 Apr 2026", "status": "Published" },
+      { "id": "math204-grade-2", "title": "Problem Set 5", "type": "Homework", "score": "9.5/10", "weight": "5%", "date": "18 Apr 2026", "status": "Published" }
+    ]
+  },
+  "assessments": [
+    { "id": "math204-homework-6", "title": "Problem Set 6", "type": "Homework", "date": "02 May 2026", "time": "23:59", "statusLabel": "6 days left", "tone": "blue", "mode": "Individual", "description": "Differential equations practice set." }
+  ],
+  "exams": [
+    { "id": "math204-midterm", "title": "Midterm Exam", "type": "Exam", "date": "30 Apr 2026", "time": "09:00", "statusLabel": "4 days left", "tone": "orange", "duration": "90 min", "room": "C205" },
+    { "id": "math204-final", "title": "Final Exam", "type": "Exam", "date": "12 Jun 2026", "time": "12:00", "statusLabel": "Scheduled", "tone": "orange", "duration": "120 min", "room": "Main Hall" }
+  ],
+  "announcements": [
+    { "id": "math204-ann-1", "title": "Midterm Formula Sheet", "body": "Allowed formula sheet requirements are posted in materials.", "date": "24 Apr 2026" },
+    { "id": "math204-ann-2", "title": "Problem Set 6 Open", "body": "Problem Set 6 is open and due on 2 May 2026.", "date": "21 Apr 2026" }
+  ],
+  "deadlines": [
+    { "id": "math204-midterm", "title": "Midterm Exam", "type": "Next Exam", "date": "30 Apr 2026", "time": "09:00", "statusLabel": "4 days left", "tone": "orange" },
+    { "id": "math204-homework-6", "title": "Problem Set 6", "type": "Homework", "date": "02 May 2026", "time": "23:59", "statusLabel": "6 days left", "tone": "blue" }
+  ]
+}

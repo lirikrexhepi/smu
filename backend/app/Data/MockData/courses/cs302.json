@@ -1,0 +1,85 @@
+{
+  "courseId": "cs302",
+  "code": "CS302",
+  "name": "Programming II",
+  "professor": {
+    "name": "Prof. Ermir Rogova",
+    "email": "ermir.rogova@uni-pr.edu",
+    "officeHours": "Tue 15:30 - 16:30",
+    "consultation": "After lab or by appointment"
+  },
+  "ects": 6,
+  "schedule": {
+    "days": ["Tue", "Thu"],
+    "daysLabel": "Tue, Thu",
+    "time": "14:00 - 15:30",
+    "room": "Lab B101",
+    "label": "Tue, Thu 14:00 - 15:30"
+  },
+  "room": "Lab B101",
+  "semester": "Semester 4 (Spring 2025/26)",
+  "status": "Active",
+  "description": "Programming II develops object-oriented design, collections, error handling, testing, and practical application structure through weekly programming labs.",
+  "overview": {
+    "learningOutcomes": [
+      "Design object-oriented programs with clear responsibilities.",
+      "Use collections, exceptions, and tests in applied problems.",
+      "Build small applications with maintainable module boundaries."
+    ],
+    "topics": ["Object-oriented design", "Collections", "Exceptions", "Unit testing", "Application structure"],
+    "gradingBreakdown": "Labs 40%, Project 30%, Exams 30%"
+  },
+  "courseInfo": [
+    { "id": "office-hours", "label": "Office Hours", "value": "Tue 15:30 - 16:30 (Lab B101)" },
+    { "id": "consultation", "label": "Consultation", "value": "ermir.rogova@uni-pr.edu - After lab or by appointment" },
+    { "id": "grading-breakdown", "label": "Grading Breakdown", "value": "Labs 40%, Project 30%, Exams 30%" }
+  ],
+  "materials": [
+    { "id": "cs302-material-1", "title": "Collections and Generics", "type": "Slides", "updatedAt": "22 Apr 2026", "size": "1.2 MB" },
+    { "id": "cs302-material-2", "title": "Lab 7 Starter Project", "type": "Code", "updatedAt": "25 Apr 2026", "size": "340 KB" },
+    { "id": "cs302-material-3", "title": "Testing Checklist", "type": "Guide", "updatedAt": "19 Apr 2026", "size": "420 KB" }
+  ],
+  "attendance": {
+    "requiredPercentage": 75,
+    "sessionsHeld": 19,
+    "sessionsAttended": 13,
+    "status": "At risk",
+    "summary": [
+      { "label": "Lectures attended", "value": "8 of 12" },
+      { "label": "Labs attended", "value": "5 of 7" },
+      { "label": "Required minimum", "value": "75%" }
+    ],
+    "records": [
+      { "id": "cs302-att-1", "date": "24 Apr 2026", "type": "Lab", "status": "Present" },
+      { "id": "cs302-att-2", "date": "22 Apr 2026", "type": "Lecture", "status": "Absent" },
+      { "id": "cs302-att-3", "date": "17 Apr 2026", "type": "Lab", "status": "Present" }
+    ]
+  },
+  "grades": {
+    "scale": "10-point",
+    "breakdown": [
+      { "component": "Labs", "weight": 40 },
+      { "component": "Project", "weight": 30 },
+      { "component": "Exams", "weight": 30 }
+    ],
+    "records": [
+      { "id": "cs302-grade-1", "title": "Lab 5", "type": "Lab", "score": "7.5/10", "weight": "8%", "date": "09 Apr 2026", "status": "Published" },
+      { "id": "cs302-grade-2", "title": "Lab 6", "type": "Lab", "score": "7/10", "weight": "8%", "date": "18 Apr 2026", "status": "Published" }
+    ]
+  },
+  "assessments": [
+    { "id": "cs302-lab-7", "title": "Lab Session 7", "type": "Lab", "date": "27 Apr 2026", "time": "10:00", "statusLabel": "Tomorrow, 10:00", "tone": "blue", "mode": "Individual", "description": "Collections and exception handling practical session." },
+    { "id": "cs302-project-checkpoint", "title": "Project Checkpoint", "type": "Project", "date": "08 May 2026", "time": "23:59", "statusLabel": "12 days left", "tone": "purple", "mode": "Group", "description": "Submit repository link and short progress report." }
+  ],
+  "exams": [
+    { "id": "cs302-practical", "title": "Practical Exam", "type": "Exam", "date": "20 May 2026", "time": "14:00", "statusLabel": "24 days left", "tone": "orange", "duration": "120 min", "room": "Lab B101" }
+  ],
+  "announcements": [
+    { "id": "cs302-ann-1", "title": "Lab 7 Starter Project", "body": "Starter project and test checklist are available in materials.", "date": "25 Apr 2026" },
+    { "id": "cs302-ann-2", "title": "Attendance Notice", "body": "Students below 75% attendance should contact the professor this week.", "date": "23 Apr 2026" }
+  ],
+  "deadlines": [
+    { "id": "cs302-lab-7", "title": "Lab Session 7", "type": "Lab", "date": "27 Apr 2026", "time": "10:00", "statusLabel": "Tomorrow, 10:00", "tone": "blue" },
+    { "id": "cs302-project-checkpoint", "title": "Project Checkpoint", "type": "Project", "date": "08 May 2026", "time": "23:59", "statusLabel": "12 days left", "tone": "purple" }
+  ]
+}

@@ -1,0 +1,88 @@
+{
+  "courseId": "cs304",
+  "code": "CS304",
+  "name": "Computer Architecture",
+  "professor": {
+    "name": "Prof. Arben Kajku",
+    "email": "arben.kajku@uni-pr.edu",
+    "officeHours": "Tue 12:00 - 13:00, Thu 12:00 - 13:00",
+    "consultation": "By appointment"
+  },
+  "ects": 6,
+  "schedule": {
+    "days": ["Tue", "Thu"],
+    "daysLabel": "Tue, Thu",
+    "time": "10:00 - 11:30",
+    "room": "B101",
+    "label": "Tue, Thu 10:00 - 11:30"
+  },
+  "room": "B101",
+  "semester": "Semester 4 (Spring 2025/26)",
+  "status": "Active",
+  "description": "This course introduces fundamental concepts and principles of computer architecture and organization. Topics include instruction set architecture, CPU design, memory hierarchy, I/O systems, and performance evaluation.",
+  "overview": {
+    "learningOutcomes": [
+      "Explain instruction set architecture and datapath organization.",
+      "Analyze CPU, memory, and I/O subsystem tradeoffs.",
+      "Evaluate architecture performance using common metrics."
+    ],
+    "topics": ["Instruction sets", "CPU datapath", "Pipelining", "Memory hierarchy", "I/O systems"],
+    "gradingBreakdown": "Exams 60%, Labs 20%, Project 20%"
+  },
+  "courseInfo": [
+    { "id": "office-hours", "label": "Office Hours", "value": "Tue 12:00 - 13:00, Thu 12:00 - 13:00 (B101)" },
+    { "id": "consultation", "label": "Consultation", "value": "arben.kajku@uni-pr.edu - By appointment" },
+    { "id": "grading-breakdown", "label": "Grading Breakdown", "value": "Exams 60%, Labs 20%, Project 20%" }
+  ],
+  "materials": [
+    { "id": "cs304-material-1", "title": "Test Document", "type": "Document", "updatedAt": "26 Apr 2026", "size": "13 B", "downloadUrl": "/uploads/materials/test-document.txt" },
+    { "id": "cs304-material-2", "title": "Pipelining Lab Guide", "type": "Lab", "updatedAt": "18 Apr 2026", "size": "860 KB" },
+    { "id": "cs304-material-3", "title": "Memory Hierarchy Reading", "type": "Reading", "updatedAt": "12 Apr 2026", "size": "1.1 MB" }
+  ],
+  "attendance": {
+    "requiredPercentage": 75,
+    "sessionsHeld": 18,
+    "sessionsAttended": 16,
+    "status": "On track",
+    "summary": [
+      { "label": "Lectures attended", "value": "12 of 13" },
+      { "label": "Labs attended", "value": "4 of 5" },
+      { "label": "Absences remaining", "value": "3" }
+    ],
+    "records": [
+      { "id": "cs304-att-1", "date": "23 Apr 2026", "type": "Lecture", "status": "Present" },
+      { "id": "cs304-att-2", "date": "21 Apr 2026", "type": "Lab", "status": "Present" },
+      { "id": "cs304-att-3", "date": "16 Apr 2026", "type": "Lecture", "status": "Absent" }
+    ]
+  },
+  "grades": {
+    "scale": "10-point",
+    "breakdown": [
+      { "component": "Exams", "weight": 60 },
+      { "component": "Labs", "weight": 20 },
+      { "component": "Project", "weight": 20 }
+    ],
+    "records": [
+      { "id": "cs304-grade-1", "title": "Quiz 2", "type": "Quiz", "score": "8.5/10", "weight": "10%", "date": "10 Apr 2026", "status": "Published" },
+      { "id": "cs304-grade-2", "title": "Lab 4", "type": "Lab", "score": "9/10", "weight": "10%", "date": "17 Apr 2026", "status": "Published" }
+    ]
+  },
+  "assessments": [
+    { "id": "cs304-assignment-2", "title": "Assignment 2", "type": "Assignment", "date": "28 Apr 2026", "time": "23:59", "statusLabel": "2 days left", "tone": "blue", "mode": "Individual", "description": "Datapath and control unit exercises." },
+    { "id": "cs304-lab-assignment-3", "title": "Lab Assignment 3", "type": "Lab Work", "date": "12 May 2026", "time": "10:00", "statusLabel": "16 days left", "tone": "blue", "mode": "Individual", "description": "Cache simulation lab report." },
+    { "id": "cs304-project-proposal", "title": "Project Proposal", "type": "Project", "date": "26 May 2026", "time": "23:59", "statusLabel": "30 days left", "tone": "purple", "mode": "Group", "description": "Architecture performance analysis proposal." }
+  ],
+  "exams": [
+    { "id": "cs304-midterm", "title": "Midterm Exam", "type": "Exam", "date": "30 Apr 2026", "time": "10:00", "statusLabel": "4 days left", "tone": "orange", "duration": "90 min", "room": "B101" },
+    { "id": "cs304-final", "title": "Final Exam", "type": "Exam", "date": "15 Jun 2026", "time": "09:00", "statusLabel": "Scheduled", "tone": "orange", "duration": "120 min", "room": "Main Hall" }
+  ],
+  "announcements": [
+    { "id": "cs304-ann-1", "title": "Midterm Exam Details", "body": "Midterm exam will take place on Wednesday, 30 Apr 2026 in room B101.", "date": "28 Apr 2026" },
+    { "id": "cs304-ann-2", "title": "Lab Session Change", "body": "Lab session on 7 May is rescheduled to 8 May at 14:00.", "date": "26 Apr 2026" },
+    { "id": "cs304-ann-3", "title": "Project Proposal Guidelines", "body": "Project proposal requirements and submission format are now available.", "date": "20 Apr 2026" }
+  ],
+  "deadlines": [
+    { "id": "cs304-assignment-2", "title": "Assignment 2", "type": "Next Exam", "date": "28 Apr 2026", "time": "23:59", "statusLabel": "2 days left", "tone": "blue" },
+    { "id": "cs304-midterm", "title": "Midterm Exam", "type": "Exam", "date": "30 Apr 2026", "time": "10:00", "statusLabel": "4 days left", "tone": "orange" }
+  ]
+}

@@ -50,6 +50,22 @@ final class SemsMockData
     /**
      * @return array<string, mixed>
      */
+    public static function studentCourses(string $studentKey): array
+    {
+        return self::readStudentJson($studentKey, 'courses.json');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public static function course(string $courseId): array
+    {
+        return self::readJson(__DIR__ . '/courses/' . self::safeCourseId($courseId) . '.json');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
     private static function readStudentJson(string $studentKey, string $filename): array
     {
         return self::readJson(__DIR__ . '/students/' . self::safeStudentKey($studentKey) . '/' . $filename);
@@ -88,5 +104,16 @@ final class SemsMockData
         }
 
         return $safeKey;
+    }
+
+    private static function safeCourseId(string $courseId): string
+    {
+        $safeId = preg_replace('/[^A-Za-z0-9_-]/', '-', strtolower(trim($courseId)));
+
+        if ($safeId === null || $safeId === '') {
+            throw new RuntimeException('Course id is required.');
+        }
+
+        return $safeId;
     }
 }

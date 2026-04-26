@@ -1,0 +1,77 @@
+{
+  "courseId": "cs310",
+  "code": "CS310",
+  "name": "Human-Computer Interaction",
+  "professor": {
+    "name": "Prof. Vjollca Sadiku",
+    "email": "vjollca.sadiku@uni-pr.edu",
+    "officeHours": "Mon 15:00 - 16:00",
+    "consultation": "By appointment"
+  },
+  "ects": 4,
+  "schedule": {
+    "days": ["Mon"],
+    "daysLabel": "Mon",
+    "time": "16:00 - 18:00",
+    "room": "A102",
+    "label": "Mon 16:00 - 18:00"
+  },
+  "room": "A102",
+  "semester": "Semester 4 (Spring 2025/26)",
+  "status": "Upcoming",
+  "description": "Human-Computer Interaction focuses on user research, interaction design, usability evaluation, accessibility, and prototyping for software products.",
+  "overview": {
+    "learningOutcomes": [
+      "Plan user research and translate findings into product requirements.",
+      "Create interaction flows and interface prototypes.",
+      "Evaluate usability and accessibility using structured methods."
+    ],
+    "topics": ["User research", "Interaction design", "Accessibility", "Prototyping", "Usability testing"],
+    "gradingBreakdown": "Project 50%, Exams 30%, Participation 20%"
+  },
+  "courseInfo": [
+    { "id": "office-hours", "label": "Office Hours", "value": "Mon 15:00 - 16:00 (A102)" },
+    { "id": "consultation", "label": "Consultation", "value": "vjollca.sadiku@uni-pr.edu - By appointment" },
+    { "id": "grading-breakdown", "label": "Grading Breakdown", "value": "Project 50%, Exams 30%, Participation 20%" }
+  ],
+  "materials": [
+    { "id": "cs310-material-1", "title": "Usability Heuristics", "type": "Slides", "updatedAt": "16 Apr 2026", "size": "1.0 MB" },
+    { "id": "cs310-material-2", "title": "Interview Guide Template", "type": "Template", "updatedAt": "18 Apr 2026", "size": "220 KB" },
+    { "id": "cs310-material-3", "title": "Prototype Review Checklist", "type": "Guide", "updatedAt": "22 Apr 2026", "size": "360 KB" }
+  ],
+  "attendance": {
+    "requiredPercentage": 75,
+    "sessionsHeld": 8,
+    "sessionsAttended": 0,
+    "status": "Not started",
+    "summary": [
+      { "label": "Lectures attended", "value": "0 of 0" },
+      { "label": "Workshops attended", "value": "0 of 0" },
+      { "label": "Required minimum", "value": "75%" }
+    ],
+    "records": []
+  },
+  "grades": {
+    "scale": "10-point",
+    "breakdown": [
+      { "component": "Project", "weight": 50 },
+      { "component": "Exams", "weight": 30 },
+      { "component": "Participation", "weight": 20 }
+    ],
+    "records": []
+  },
+  "assessments": [
+    { "id": "cs310-research-plan", "title": "Research Plan", "type": "Project", "date": "18 May 2026", "time": "23:59", "statusLabel": "22 days left", "tone": "purple", "mode": "Group", "description": "Submit research goals, participant plan, and interview script." }
+  ],
+  "exams": [
+    { "id": "cs310-final-exam", "title": "Final Exam", "type": "Exam", "date": "12 May 2026", "time": "12:00", "statusLabel": "16 days left", "tone": "orange", "duration": "90 min", "room": "A102" }
+  ],
+  "announcements": [
+    { "id": "cs310-ann-1", "title": "Course Opens Soon", "body": "Initial HCI materials and project teams will be confirmed in the first session.", "date": "24 Apr 2026" },
+    { "id": "cs310-ann-2", "title": "Prototype Review Checklist", "body": "Use the checklist before submitting your first prototype review.", "date": "22 Apr 2026" }
+  ],
+  "deadlines": [
+    { "id": "cs310-final-exam", "title": "Final Exam", "type": "Next Exam", "date": "12 May 2026", "time": "12:00", "statusLabel": "16 days left", "tone": "orange" },
+    { "id": "cs310-research-plan", "title": "Research Plan", "type": "Project", "date": "18 May 2026", "time": "23:59", "statusLabel": "22 days left", "tone": "purple" }
+  ]
+}

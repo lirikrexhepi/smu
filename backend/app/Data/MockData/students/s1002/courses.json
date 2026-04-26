@@ -1,0 +1,49 @@
+{
+  "studentKey": "s1002",
+  "semester": "Semester 6",
+  "academicYear": "Spring 2025/26",
+  "semesterOptions": ["Semester 6 (Spring 2025/26)"],
+  "ectsTarget": 26,
+  "courses": [
+    {
+      "courseId": "cs308",
+      "enrollmentStatus": "active",
+      "currentGrade": "A",
+      "attendancePercentage": 93,
+      "nextImportantEventId": "cs308-project-proposal",
+      "enrolledAt": "2026-02-10"
+    },
+    {
+      "courseId": "cs306",
+      "enrollmentStatus": "active",
+      "currentGrade": "B+",
+      "attendancePercentage": 89,
+      "nextImportantEventId": "cs306-quiz-3",
+      "enrolledAt": "2026-02-10"
+    },
+    {
+      "courseId": "cs310",
+      "enrollmentStatus": "registered",
+      "currentGrade": "",
+      "attendancePercentage": 0,
+      "nextImportantEventId": "cs310-final-exam",
+      "enrolledAt": "2026-02-12"
+    },
+    {
+      "courseId": "cs304",
+      "enrollmentStatus": "active",
+      "currentGrade": "A-",
+      "attendancePercentage": 90,
+      "nextImportantEventId": "cs304-assignment-2",
+      "enrolledAt": "2026-02-10"
+    },
+    {
+      "courseId": "math204",
+      "enrollmentStatus": "active",
+      "currentGrade": "B+",
+      "attendancePercentage": 87,
+      "nextImportantEventId": "math204-midterm",
+      "enrolledAt": "2026-02-10"
+    }
+  ]
+}

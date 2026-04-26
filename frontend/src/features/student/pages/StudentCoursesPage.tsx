@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { Skeleton } from '@/components/ui/skeleton'
 import { getStudentCourses } from '@/lib/api/student'
 import { getStoredAuthUser } from '@/lib/auth/session'
 import { cn } from '@/lib/utils'
@@ -86,11 +87,15 @@ export function StudentCoursesPage() {
     return (
       <>
         <PageHeader title="Courses" description="My enrolled courses" />
-        <Card>
-          <CardContent className="pt-5">
-            <p className="text-sm text-slate-500">{errorMessage ?? 'Loading courses'}</p>
-          </CardContent>
-        </Card>
+        {errorMessage ? (
+          <Card>
+            <CardContent className="pt-5">
+              <p className="text-sm text-slate-500">{errorMessage}</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <CoursesOverviewSkeleton />
+        )}
       </>
     )
   }
@@ -132,11 +137,6 @@ export function StudentCoursesPage() {
   return (
     <>
       <PageHeader title="Courses" description="My enrolled courses" />
-
-      <div className="mb-4">
-        <h1 className="text-2xl font-semibold text-slate-950">Courses</h1>
-        <p className="mt-1 text-sm text-slate-500">My enrolled courses</p>
-      </div>
 
       {errorMessage ? (
         <div className="mb-5 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -224,6 +224,98 @@ export function StudentCoursesPage() {
         </Card>
       </div>
     </>
+  )
+}
+
+function CoursesOverviewSkeleton() {
+  return (
+    <div aria-label="Loading courses" aria-busy="true">
+      <div className="mb-6 grid gap-3 lg:grid-cols-[minmax(260px,420px)_260px_180px]">
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
+        <div>
+          <div className="mb-5 grid gap-4 md:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <Card key={index}>
+                <CardContent className="flex items-center gap-5 p-5">
+                  <Skeleton className="h-14 w-14 shrink-0 rounded-full" />
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-8 w-14" />
+                    <Skeleton className="h-4 w-40" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <Card key={index}>
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <Skeleton className="h-5 w-44 max-w-full" />
+                      <Skeleton className="h-4 w-16" />
+                    </div>
+                    <Skeleton className="h-7 w-16 rounded-md" />
+                  </div>
+
+                  <div className="mt-3 border-b border-slate-100 pb-3">
+                    <Skeleton className="h-4 w-40 max-w-full" />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 border-b border-slate-100 py-3">
+                    <Skeleton className="h-5 w-20" />
+                    <div className="space-y-2 border-l border-slate-100 pl-3">
+                      <Skeleton className="h-4 w-20" />
+                      <Skeleton className="h-4 w-24" />
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex gap-3">
+                    <Skeleton className="h-9 w-9 rounded-md" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-3 w-20" />
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-4 w-28" />
+                    </div>
+                  </div>
+
+                  <Skeleton className="mt-4 h-10 w-full" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+
+        <Card className="h-fit">
+          <CardHeader className="flex-row items-center justify-between">
+            <Skeleton className="h-5 w-48" />
+            <Skeleton className="h-4 w-16" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="grid gap-3 text-sm sm:grid-cols-[auto_1fr_auto] sm:items-center">
+                <Skeleton className="h-10 w-10 rounded-md" />
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-4 w-44" />
+                </div>
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-4 w-16" />
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   )
 }
 

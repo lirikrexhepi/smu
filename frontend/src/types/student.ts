@@ -267,3 +267,104 @@ export type StudentCourseDetail = {
     enrolledAt: string
   }
 }
+
+export type StudentAttendanceTone = 'blue' | 'green' | 'orange' | 'purple' | 'red' | 'teal'
+
+export type StudentAttendanceComparison = {
+  value: number
+  direction: 'up' | 'down' | 'flat'
+  label: string
+}
+
+export type StudentAttendanceSummary = {
+  overallAttendance: number
+  presentSessions: number
+  totalSessions: number
+  absences: number
+  lateRecords: number
+  absenceRate: number
+  lateRate: number
+  comparisonVsLast4Weeks: StudentAttendanceComparison
+}
+
+export type StudentAttendanceCourseOption = {
+  courseId: string
+  code: string
+  name: string
+  label: string
+}
+
+export type StudentAttendanceWeek = {
+  startDate: string
+  endDate: string
+  label: string
+  requestedDate: string | null
+}
+
+export type StudentAttendanceLastRecorded = {
+  courseId: string
+  courseCode: string
+  courseName: string
+  date: string
+  dateLabel: string
+  time: string
+  status: string
+  statusLabel: string
+}
+
+export type StudentAttendanceScheduleBlock = {
+  id: string
+  courseId: string
+  courseCode: string
+  courseName: string
+  professor: string
+  time: string
+  startTime: string
+  endTime: string
+  room: string
+  type: string
+  status: 'present' | 'absent' | 'late' | 'recorded' | 'scheduled' | string
+  statusLabel: string
+  tone: StudentAttendanceTone
+}
+
+export type StudentAttendanceScheduleDay = {
+  date: string
+  dayName: string
+  dayShort: string
+  dateLabel: string
+  isToday: boolean
+  blocks: StudentAttendanceScheduleBlock[]
+}
+
+export type StudentAttendanceHistoryRecord = {
+  id: string
+  courseId: string
+  courseCode: string
+  courseName: string
+  date: string
+  dateIso: string
+  time: string
+  type: string
+  professor: string
+  result: 'present' | 'absent' | 'late' | string
+  resultLabel: string
+}
+
+export type StudentAttendance = {
+  studentKey: string
+  semester: string
+  academicYear: string
+  selectedCourseId: string | null
+  selectedSemester: string
+  selectedWeek: string
+  filters: {
+    courses: StudentAttendanceCourseOption[]
+    semesters: string[]
+  }
+  week: StudentAttendanceWeek
+  summary: StudentAttendanceSummary
+  lastRecorded: StudentAttendanceLastRecorded | null
+  weeklySchedule: StudentAttendanceScheduleDay[]
+  history: StudentAttendanceHistoryRecord[]
+}

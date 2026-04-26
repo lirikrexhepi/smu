@@ -2,6 +2,7 @@ import { apiGet, apiPatch, apiUpload } from '@/lib/api/client'
 import type {
   StudentCourseDetail,
   StudentCoursesOverview,
+  StudentAttendance,
   StudentDashboardSummary,
   StudentProfile,
   StudentProfileUpdate,
@@ -19,6 +20,27 @@ export function getStudentCourseDetail(studentKey: string, courseId: string) {
   return apiGet<StudentCourseDetail>(
     `/api/student/courses/${encodeURIComponent(courseId)}?studentKey=${encodeURIComponent(studentKey)}`,
   )
+}
+
+export function getStudentAttendance(
+  studentKey: string,
+  filters: { courseId?: string; semester?: string; week?: string } = {},
+) {
+  const params = new URLSearchParams({ studentKey })
+
+  if (filters.courseId && filters.courseId !== 'all') {
+    params.set('courseId', filters.courseId)
+  }
+
+  if (filters.semester && filters.semester !== 'all') {
+    params.set('semester', filters.semester)
+  }
+
+  if (filters.week) {
+    params.set('week', filters.week)
+  }
+
+  return apiGet<StudentAttendance>(`/api/student/attendance?${params.toString()}`)
 }
 
 export function getStudentProfile(studentKey: string) {

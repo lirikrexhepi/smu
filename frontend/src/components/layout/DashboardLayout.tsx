@@ -1,4 +1,4 @@
-import { Bell, ChevronDown, LogOut, PanelLeftClose, PanelLeftOpen, Settings, User } from 'lucide-react'
+import { Bell, ChevronDown, LogOut, Menu, PanelLeftClose, PanelLeftOpen, Settings, User, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 
@@ -27,6 +27,7 @@ type DashboardLayoutProps = {
 export function DashboardLayout({ role, portalLabel, userLabel, navItems }: DashboardLayoutProps) {
   const navigate = useNavigate()
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
   const [storedUser, setStoredUser] = useState<AuthUser | null>(() => getStoredAuthUser())
   const [currentTerm, setCurrentTerm] = useState<string | null>(null)
   const displayUser = storedUser?.role === role ? storedUser : null
@@ -95,13 +96,85 @@ export function DashboardLayout({ role, portalLabel, userLabel, navItems }: Dash
     }
   }, [role, displayUser?.institutionId])
 
+  useEffect(() => {
+    if (!isMobileSidebarOpen) {
+      return
+    }
+
+    const originalOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    return () => {
+      document.body.style.overflow = originalOverflow
+    }
+  }, [isMobileSidebarOpen])
+
   function handleLogout() {
     clearAuthUser()
+    setIsMobileSidebarOpen(false)
     navigate('/login', { replace: true })
   }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-950">
+      {isMobileSidebarOpen ? (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <button
+            type="button"
+            aria-label="Close sidebar"
+            className="absolute inset-0 h-full w-full cursor-default bg-slate-950/35"
+            onClick={() => setIsMobileSidebarOpen(false)}
+          />
+          <aside className="relative flex h-full w-[280px] max-w-[86vw] flex-col border-r border-slate-200 bg-white shadow-xl">
+            <div className="flex h-16 items-center gap-3 border-b border-slate-200 px-4">
+              <img src="/logoup.gif.png" alt="University of Prishtina logo" className="h-10 w-10 object-contain" />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold text-slate-950">SEMS</p>
+                <p className="truncate text-xs text-slate-500">{portalLabel}</p>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label="Close sidebar"
+                onClick={() => setIsMobileSidebarOpen(false)}
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+
+            <nav className="flex-1 space-y-1 px-3 py-4">
+              {navItems.map((item) => {
+                const Icon = item.icon
+
+                return (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    className={({ isActive }) =>
+                      cn(
+                        'flex h-11 items-center gap-3 rounded-md px-3 text-sm font-medium text-slate-600 transition-colors',
+                        isActive && 'bg-blue-50 text-blue-700',
+                        !isActive && 'hover:bg-slate-100 hover:text-slate-950',
+                      )
+                    }
+                    onClick={() => setIsMobileSidebarOpen(false)}
+                  >
+                    <Icon className="h-4 w-4 shrink-0" />
+                    <span className="min-w-0 truncate">{item.label}</span>
+                  </NavLink>
+                )
+              })}
+            </nav>
+
+            <div className="border-t border-slate-200 p-4">
+              <p className="text-xs font-medium uppercase text-slate-400">Current Semester</p>
+              <p className="mt-1 text-sm font-medium leading-5 text-slate-700">{displayCurrentTerm}</p>
+            </div>
+          </aside>
+        </div>
+      ) : null}
+
       <aside
         className={cn(
           'fixed inset-y-0 left-0 hidden overflow-hidden border-r border-slate-200 bg-white transition-[width] duration-300 ease-in-out lg:flex lg:flex-col',
@@ -213,9 +286,22 @@ export function DashboardLayout({ role, portalLabel, userLabel, navItems }: Dash
 
       <div className={cn('transition-[padding] duration-300 ease-in-out', isSidebarCollapsed ? 'lg:pl-[72px]' : 'lg:pl-[232px]')}>
         <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 lg:px-6">
-          <div>
-            <p className="text-sm font-medium text-slate-900">{displayFaculty}</p>
-            <p className="text-xs text-slate-500">{displayDepartment}</p>
+          <div className="flex items-center gap-3">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label="Open sidebar"
+              className="lg:hidden"
+              onClick={() => setIsMobileSidebarOpen(true)}
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+
+            <div className="hidden lg:block">
+              <p className="text-sm font-medium text-slate-900">{displayFaculty}</p>
+              <p className="text-xs text-slate-500">{displayDepartment}</p>
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
@@ -229,7 +315,8 @@ export function DashboardLayout({ role, portalLabel, userLabel, navItems }: Dash
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className="ml-2 hidden cursor-pointer items-center gap-3 rounded-md px-3 py-2 transition-colors hover:bg-slate-100 sm:flex"
+                  className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-md transition-colors hover:bg-slate-100 lg:ml-2 lg:h-auto lg:w-auto lg:gap-3 lg:px-3 lg:py-2"
+                  aria-label="Open profile menu"
                 >
                   {avatarUrl ? (
                     <img
@@ -242,11 +329,11 @@ export function DashboardLayout({ role, portalLabel, userLabel, navItems }: Dash
                       {initials}
                     </div>
                   )}
-                  <div className="text-left">
+                  <div className="hidden text-left lg:block">
                     <p className="text-xs font-medium text-slate-900">{displayName}</p>
                     <p className="text-xs text-slate-500">{profileSubtext}</p>
                   </div>
-                  <ChevronDown className="h-4 w-4 text-slate-500" />
+                  <ChevronDown className="hidden h-4 w-4 text-slate-500 lg:block" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">

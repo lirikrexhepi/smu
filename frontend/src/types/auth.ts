@@ -8,6 +8,7 @@ export type AuthUser = {
   institutionId: string
   faculty: string
   department: string
+  avatarUrl?: string | null
 }
 
 export type LoginResponse = {

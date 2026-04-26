@@ -1,5 +1,5 @@
 import { Bell, ChevronDown, LogOut, PanelLeftClose, PanelLeftOpen, Settings, User } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
@@ -12,7 +12,10 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 import type { NavItem } from '@/components/layout/navigation'
-import { clearAuthUser, getStoredAuthUser } from '@/lib/auth/session'
+import { apiAssetUrl } from '@/lib/api/client'
+import { getStudentProfile } from '@/lib/api/student'
+import { AUTH_USER_CHANGED_EVENT, clearAuthUser, getStoredAuthUser, storeAuthUser } from '@/lib/auth/session'
+import type { AuthUser } from '@/types/auth'
 
 type DashboardLayoutProps = {
   role: 'student' | 'professor' | 'admin'
@@ -24,7 +27,7 @@ type DashboardLayoutProps = {
 export function DashboardLayout({ role, portalLabel, userLabel, navItems }: DashboardLayoutProps) {
   const navigate = useNavigate()
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
-  const storedUser = getStoredAuthUser()
+  const [storedUser, setStoredUser] = useState<AuthUser | null>(() => getStoredAuthUser())
   const displayUser = storedUser?.role === role ? storedUser : null
   const displayName = displayUser?.name ?? userLabel
   const displayFaculty = displayUser?.faculty ?? 'Faculty of Information Sciences'
@@ -39,6 +42,55 @@ export function DashboardLayout({ role, portalLabel, userLabel, navItems }: Dash
     .slice(0, 2)
     .toUpperCase()
   const profilePath = role === 'student' ? '/student/profile' : `/${role}/dashboard`
+  const avatarUrl = apiAssetUrl(displayUser?.avatarUrl)
+
+  useEffect(() => {
+    function handleUserChanged() {
+      setStoredUser(getStoredAuthUser())
+    }
+
+    window.addEventListener(AUTH_USER_CHANGED_EVENT, handleUserChanged)
+    window.addEventListener('storage', handleUserChanged)
+
+    return () => {
+      window.removeEventListener(AUTH_USER_CHANGED_EVENT, handleUserChanged)
+      window.removeEventListener('storage', handleUserChanged)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (role !== 'student' || !displayUser) {
+      return
+    }
+
+    let isMounted = true
+
+    getStudentProfile(displayUser.institutionId)
+      .then((response) => {
+        if (!isMounted) {
+          return
+        }
+
+        const syncedUser = {
+          ...displayUser,
+          name: response.data.fullName,
+          email: response.data.email,
+          faculty: response.data.faculty,
+          department: response.data.department,
+          avatarUrl: response.data.avatarUrl,
+        }
+
+        setStoredUser(syncedUser)
+        storeAuthUser(syncedUser)
+      })
+      .catch(() => {
+        // The shell can still render from the stored login user if the profile mock API is unavailable.
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [role, displayUser?.institutionId])
 
   function handleLogout() {
     clearAuthUser()
@@ -176,9 +228,17 @@ export function DashboardLayout({ role, portalLabel, userLabel, navItems }: Dash
                   type="button"
                   className="ml-2 hidden cursor-pointer items-center gap-3 rounded-md px-3 py-2 transition-colors hover:bg-slate-100 sm:flex"
                 >
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-xs font-semibold text-blue-700">
-                    {initials}
-                  </div>
+                  {avatarUrl ? (
+                    <img
+                      src={avatarUrl}
+                      alt=""
+                      className="h-8 w-8 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-xs font-semibold text-blue-700">
+                      {initials}
+                    </div>
+                  )}
                   <div className="text-left">
                     <p className="text-xs font-medium text-slate-900">{displayName}</p>
                     <p className="text-xs text-slate-500">{profileSubtext}</p>

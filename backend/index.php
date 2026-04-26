@@ -2,4 +2,4 @@
 
 declare(strict_types=1);
 
-echo 'University Management API';
+require __DIR__ . '/public/index.php';

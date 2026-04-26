@@ -1,0 +1,38 @@
+{
+  "metrics": [
+    { "id": "todays-classes", "label": "Today's Classes", "value": "3", "helper": "Classes scheduled", "tone": "blue" },
+    { "id": "upcoming-deadlines", "label": "Upcoming Deadlines", "value": "4", "helper": "In the next 14 days", "tone": "orange" },
+    { "id": "attendance-status", "label": "Attendance Status", "value": "86%", "helper": "Overall attendance", "tone": "green" },
+    { "id": "current-gpa", "label": "Current GPA", "value": "9.9", "helper": "Out of 4.00", "tone": "purple" }
+  ],
+  "todaysClasses": [
+    { "id": "class-cs304", "time": "10:00 - 11:30", "courseCode": "CS304", "courseName": "Computer Architecture", "room": "Room B101", "type": "Lecture", "tone": "blue" },
+    { "id": "class-cs306", "time": "12:00 - 13:30", "courseCode": "CS306", "courseName": "Networks", "room": "Room A204", "type": "Lecture", "tone": "green" },
+    { "id": "class-cs302", "time": "14:00 - 15:30", "courseCode": "CS302", "courseName": "Programming II", "room": "Lab B101", "type": "Lab", "tone": "purple" }
+  ],
+  "upcomingDeadlines": [
+    { "id": "deadline-cs304-midterm", "title": "Midterm Exam - Computer Architecture (CS304)", "courseCode": "CS304", "date": "30 Apr 2026", "statusLabel": "4 days left", "tone": "orange" },
+    { "id": "deadline-cs306-quiz", "title": "Quiz 3 - Networks (CS306)", "courseCode": "CS306", "date": "28 Apr 2026", "statusLabel": "2 days left", "tone": "blue" },
+    { "id": "deadline-cs308-proposal", "title": "Project Proposal - Databases (CS308)", "courseCode": "CS308", "date": "05 May 2026", "statusLabel": "9 days left", "tone": "orange" },
+    { "id": "deadline-cs302-lab", "title": "Lab Report 3 - Programming II (CS302)", "courseCode": "CS302", "date": "08 May 2026", "statusLabel": "12 days left", "tone": "blue" }
+  ],
+  "latestGrades": [
+    { "id": "grade-cs304-midterm", "course": "Computer Architecture (CS304)", "assessment": "Midterm Exam", "type": "Exam", "grade": "A- (3.7)", "date": "16 Apr 2026", "tone": "green" },
+    { "id": "grade-cs306-quiz", "course": "Networks (CS306)", "assessment": "Quiz 2", "type": "Quiz", "grade": "B+ (3.3)", "date": "14 Apr 2026", "tone": "blue" },
+    { "id": "grade-cs308-project", "course": "Databases (CS308)", "assessment": "Project Proposal", "type": "Project", "grade": "A (4.0)", "date": "10 Apr 2026", "tone": "green" },
+    { "id": "grade-math204-homework", "course": "Mathematics II (MATH204)", "assessment": "Homework 3", "type": "Homework", "grade": "A- (3.7)", "date": "08 Apr 2026", "tone": "green" }
+  ],
+  "attendanceWarning": {
+    "courseCode": "CS302",
+    "courseName": "Programming II",
+    "rate": 68,
+    "requiredRate": 75,
+    "message": "You are at risk in Programming II (CS302)",
+    "detail": "Your attendance is below the 75% requirement."
+  },
+  "attendanceSummary": [
+    { "courseName": "Overall Attendance", "rate": 86 },
+    { "courseName": "Computer Architecture (CS304)", "rate": 88 },
+    { "courseName": "Networks (CS306)", "rate": 91 }
+  ]
+}

@@ -6,7 +6,7 @@ export function StudentLayout() {
     <DashboardLayout
       role="student"
       portalLabel="Student Portal"
-      userLabel="Alex Morgan"
+      userLabel="Student"
       navItems={studentNavItems}
     />
   )

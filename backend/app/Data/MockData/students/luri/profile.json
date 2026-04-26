@@ -1,0 +1,31 @@
+{
+  "studentId": "202200123",
+  "fullName": "Luri Morina",
+  "initials": "LM",
+  "avatarUrl": null,
+  "status": "Active",
+  "studentStatusLabel": "Active Student",
+  "faculty": "Fakulteti i Inxhinierise Elektrike dhe Kompjuterike",
+  "department": "Inxhinieri Kompjuterike dhe Softuerike",
+  "program": "Bachelor of Science",
+  "yearOfStudy": "2nd Year",
+  "semester": "Semester 4",
+  "academicYear": "25/26 Spring",
+  "currentGpa": "9.9",
+  "creditsEarned": "72",
+  "creditsRequired": "120",
+  "academicStanding": "Good Standing",
+  "email": "luri.morina@sems.edu",
+  "phone": "+383 44 123 456",
+  "address": "Rr. Agim Ramadani, 10000 Prishtine, Kosovo",
+  "dateOfBirth": "2002-04-18",
+  "gender": "Male",
+  "nationality": "Kosovar",
+  "personalNumber": "1002456789",
+  "emergencyContact": {
+    "name": "Arben Morina",
+    "relationship": "Father",
+    "phone": "+383 44 987 654"
+  },
+  "updatedAt": null
+}

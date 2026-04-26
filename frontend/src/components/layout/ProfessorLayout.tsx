@@ -6,7 +6,7 @@ export function ProfessorLayout() {
     <DashboardLayout
       role="professor"
       portalLabel="Professor Portal"
-      userLabel="Dr. Evelyn Carter"
+      userLabel="Prof. Besnik Shala"
       navItems={professorNavItems}
     />
   )

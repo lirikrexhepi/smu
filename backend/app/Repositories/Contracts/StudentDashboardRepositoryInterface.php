@@ -8,5 +8,5 @@ use App\DTO\StudentDashboardSummaryData;
 
 interface StudentDashboardRepositoryInterface
 {
-    public function getSummary(): StudentDashboardSummaryData;
+    public function getSummary(string $studentKey): StudentDashboardSummaryData;
 }

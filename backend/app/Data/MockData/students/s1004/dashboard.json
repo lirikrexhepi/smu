@@ -1,0 +1,35 @@
+{
+  "metrics": [
+    { "id": "todays-classes", "label": "Today's Classes", "value": "3", "helper": "Classes scheduled", "tone": "blue" },
+    { "id": "upcoming-deadlines", "label": "Upcoming Deadlines", "value": "2", "helper": "In the next 14 days", "tone": "orange" },
+    { "id": "attendance-status", "label": "Attendance Status", "value": "95%", "helper": "Overall attendance", "tone": "green" },
+    { "id": "current-gpa", "label": "Current GPA", "value": "3.74", "helper": "Out of 4.00", "tone": "purple" }
+  ],
+  "todaysClasses": [
+    { "id": "class-ds101", "time": "09:30 - 11:00", "courseCode": "DS101", "courseName": "Introduction to Data Science", "room": "Room C104", "type": "Lecture", "tone": "blue" },
+    { "id": "class-stat120", "time": "12:00 - 13:30", "courseCode": "STAT120", "courseName": "Statistics I", "room": "Room A301", "type": "Lecture", "tone": "green" },
+    { "id": "class-cs110", "time": "14:00 - 15:30", "courseCode": "CS110", "courseName": "Programming Basics", "room": "Lab B102", "type": "Lab", "tone": "purple" }
+  ],
+  "upcomingDeadlines": [
+    { "id": "deadline-ds101-notebook", "title": "Notebook Submission - Introduction to Data Science (DS101)", "courseCode": "DS101", "date": "02 May 2026", "statusLabel": "6 days left", "tone": "blue" },
+    { "id": "deadline-stat120-quiz", "title": "Quiz 2 - Statistics I (STAT120)", "courseCode": "STAT120", "date": "06 May 2026", "statusLabel": "10 days left", "tone": "orange" }
+  ],
+  "latestGrades": [
+    { "id": "grade-ds101-lab", "course": "Introduction to Data Science (DS101)", "assessment": "Lab 2", "type": "Lab", "grade": "A (4.0)", "date": "19 Apr 2026", "tone": "green" },
+    { "id": "grade-stat120-homework", "course": "Statistics I (STAT120)", "assessment": "Homework 4", "type": "Homework", "grade": "A- (3.7)", "date": "15 Apr 2026", "tone": "green" },
+    { "id": "grade-cs110-quiz", "course": "Programming Basics (CS110)", "assessment": "Quiz 3", "type": "Quiz", "grade": "B+ (3.3)", "date": "10 Apr 2026", "tone": "blue" }
+  ],
+  "attendanceWarning": {
+    "courseCode": "CS110",
+    "courseName": "Programming Basics",
+    "rate": 90,
+    "requiredRate": 75,
+    "message": "No attendance risk detected",
+    "detail": "Your attendance is comfortably above the requirement."
+  },
+  "attendanceSummary": [
+    { "courseName": "Overall Attendance", "rate": 95 },
+    { "courseName": "Introduction to Data Science (DS101)", "rate": 97 },
+    { "courseName": "Statistics I (STAT120)", "rate": 94 }
+  ]
+}

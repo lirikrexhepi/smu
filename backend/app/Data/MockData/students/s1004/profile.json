@@ -1,0 +1,31 @@
+{
+  "studentId": "202200126",
+  "fullName": "Nora Williams",
+  "initials": "NW",
+  "avatarUrl": null,
+  "status": "Active",
+  "studentStatusLabel": "Active Student",
+  "faculty": "Faculty of Information Sciences",
+  "department": "Data Science BSc",
+  "program": "Bachelor of Science",
+  "yearOfStudy": "1st Year",
+  "semester": "Semester 2",
+  "academicYear": "25/26 Spring",
+  "currentGpa": "3.74",
+  "creditsEarned": "34",
+  "creditsRequired": "120",
+  "academicStanding": "Good Standing",
+  "email": "nora.williams@sems.edu",
+  "phone": "+383 44 456 789",
+  "address": "Rr. B, 10000 Prishtine, Kosovo",
+  "dateOfBirth": "2004-02-27",
+  "gender": "Female",
+  "nationality": "Kosovar",
+  "personalNumber": "1002456792",
+  "emergencyContact": {
+    "name": "Robert Williams",
+    "relationship": "Father",
+    "phone": "+383 44 654 321"
+  },
+  "updatedAt": null
+}

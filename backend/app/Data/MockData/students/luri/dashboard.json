@@ -3,7 +3,7 @@
     { "id": "todays-classes", "label": "Today's Classes", "value": "3", "helper": "Classes scheduled", "tone": "blue" },
     { "id": "upcoming-deadlines", "label": "Upcoming Deadlines", "value": "4", "helper": "In the next 14 days", "tone": "orange" },
     { "id": "attendance-status", "label": "Attendance Status", "value": "86%", "helper": "Overall attendance", "tone": "green" },
-    { "id": "current-gpa", "label": "Current GPA", "value": "9.9", "helper": "Out of 4.00", "tone": "purple" }
+    { "id": "average-grade", "label": "Average Grade", "value": "8.9", "helper": "5-10 scale", "tone": "purple" }
   ],
   "todaysClasses": [
     { "id": "class-cs304", "time": "10:00 - 11:30", "courseCode": "CS304", "courseName": "Computer Architecture", "room": "Room B101", "type": "Lecture", "tone": "blue" },
@@ -17,10 +17,10 @@
     { "id": "deadline-cs302-lab", "title": "Lab Report 3 - Programming II (CS302)", "courseCode": "CS302", "date": "08 May 2026", "statusLabel": "12 days left", "tone": "blue" }
   ],
   "latestGrades": [
-    { "id": "grade-cs304-midterm", "course": "Computer Architecture (CS304)", "assessment": "Midterm Exam", "type": "Exam", "grade": "A- (3.7)", "date": "16 Apr 2026", "tone": "green" },
-    { "id": "grade-cs306-quiz", "course": "Networks (CS306)", "assessment": "Quiz 2", "type": "Quiz", "grade": "B+ (3.3)", "date": "14 Apr 2026", "tone": "blue" },
-    { "id": "grade-cs308-project", "course": "Databases (CS308)", "assessment": "Project Proposal", "type": "Project", "grade": "A (4.0)", "date": "10 Apr 2026", "tone": "green" },
-    { "id": "grade-math204-homework", "course": "Mathematics II (MATH204)", "assessment": "Homework 3", "type": "Homework", "grade": "A- (3.7)", "date": "08 Apr 2026", "tone": "green" }
+    { "id": "grade-cs304-midterm", "course": "Computer Architecture (CS304)", "assessment": "Midterm Exam", "type": "Exam", "grade": "9/10", "date": "16 Apr 2026", "tone": "green" },
+    { "id": "grade-cs306-quiz", "course": "Networks (CS306)", "assessment": "Quiz 2", "type": "Quiz", "grade": "8/10", "date": "14 Apr 2026", "tone": "blue" },
+    { "id": "grade-cs308-project", "course": "Databases (CS308)", "assessment": "Project Proposal", "type": "Project", "grade": "8/10", "date": "10 Apr 2026", "tone": "green" },
+    { "id": "grade-math204-homework", "course": "Mathematics II (MATH204)", "assessment": "Homework 3", "type": "Homework", "grade": "9/10", "date": "08 Apr 2026", "tone": "green" }
   ],
   "attendanceWarning": {
     "courseCode": "CS302",

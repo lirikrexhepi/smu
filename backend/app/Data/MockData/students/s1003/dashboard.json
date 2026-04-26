@@ -3,7 +3,7 @@
     { "id": "todays-classes", "label": "Today's Classes", "value": "4", "helper": "Classes scheduled", "tone": "blue" },
     { "id": "upcoming-deadlines", "label": "Upcoming Deadlines", "value": "5", "helper": "In the next 14 days", "tone": "orange" },
     { "id": "attendance-status", "label": "Attendance Status", "value": "82%", "helper": "Overall attendance", "tone": "green" },
-    { "id": "current-gpa", "label": "Current GPA", "value": "3.41", "helper": "Out of 4.00", "tone": "purple" }
+    { "id": "average-grade", "label": "Average Grade", "value": "7.2", "helper": "5-10 scale", "tone": "purple" }
   ],
   "todaysClasses": [
     { "id": "class-se210", "time": "08:30 - 10:00", "courseCode": "SE210", "courseName": "Software Design", "room": "Room B205", "type": "Lecture", "tone": "blue" },
@@ -19,9 +19,9 @@
     { "id": "deadline-se232-demo", "title": "Frontend Demo - Web Engineering (SE232)", "courseCode": "SE232", "date": "09 May 2026", "statusLabel": "13 days left", "tone": "orange" }
   ],
   "latestGrades": [
-    { "id": "grade-se210-design", "course": "Software Design (SE210)", "assessment": "Design Review", "type": "Project", "grade": "B+ (3.3)", "date": "17 Apr 2026", "tone": "blue" },
-    { "id": "grade-se232-lab", "course": "Web Engineering (SE232)", "assessment": "Lab 4", "type": "Lab", "grade": "A- (3.7)", "date": "13 Apr 2026", "tone": "green" },
-    { "id": "grade-math212-quiz", "course": "Discrete Mathematics (MATH212)", "assessment": "Quiz 3", "type": "Quiz", "grade": "B (3.0)", "date": "11 Apr 2026", "tone": "blue" }
+    { "id": "grade-se210-design", "course": "Software Design (SE210)", "assessment": "Design Review", "type": "Project", "grade": "8/10", "date": "17 Apr 2026", "tone": "blue" },
+    { "id": "grade-se232-lab", "course": "Web Engineering (SE232)", "assessment": "Lab 4", "type": "Lab", "grade": "9/10", "date": "13 Apr 2026", "tone": "green" },
+    { "id": "grade-math212-quiz", "course": "Discrete Mathematics (MATH212)", "assessment": "Quiz 3", "type": "Quiz", "grade": "7/10", "date": "11 Apr 2026", "tone": "blue" }
   ],
   "attendanceWarning": {
     "courseCode": "SE240",

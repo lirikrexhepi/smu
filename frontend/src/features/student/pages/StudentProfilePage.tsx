@@ -314,7 +314,7 @@ export function StudentProfilePage() {
               </>
             ) : (
               <>
-                <SummaryRow icon={TrendingUp} iconClassName="bg-purple-50 text-purple-600" label="Current GPA" helper="Out of 4.00" value={profile.currentGpa} strong />
+                <SummaryRow icon={TrendingUp} iconClassName="bg-purple-50 text-purple-600" label="Average Grade" helper="5-10 scale" value={profile.currentGpa} strong />
                 <SummaryRow icon={BookOpenCheck} iconClassName="bg-orange-50 text-orange-600" label="Total Credits Earned" helper={`Out of ${profile.creditsRequired}`} value={profile.creditsEarned} strong />
                 <SummaryRow icon={Award} iconClassName="bg-green-50 text-green-700" label="Academic Standing" value={profile.academicStanding} valueClassName="text-green-700" />
               </>

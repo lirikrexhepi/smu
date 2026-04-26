@@ -3,7 +3,7 @@
     { "id": "todays-classes", "label": "Today's Classes", "value": "2", "helper": "Classes scheduled", "tone": "blue" },
     { "id": "upcoming-deadlines", "label": "Upcoming Deadlines", "value": "3", "helper": "In the next 14 days", "tone": "orange" },
     { "id": "attendance-status", "label": "Attendance Status", "value": "93%", "helper": "Overall attendance", "tone": "green" },
-    { "id": "current-gpa", "label": "Current GPA", "value": "3.82", "helper": "Out of 4.00", "tone": "purple" }
+    { "id": "average-grade", "label": "Average Grade", "value": "9.2", "helper": "5-10 scale", "tone": "purple" }
   ],
   "todaysClasses": [
     { "id": "class-is402", "time": "09:00 - 10:30", "courseCode": "IS402", "courseName": "Enterprise Systems", "room": "Room C203", "type": "Lecture", "tone": "blue" },
@@ -15,9 +15,9 @@
     { "id": "deadline-mgmt310-report", "title": "Process Report - Management (MGMT310)", "courseCode": "MGMT310", "date": "07 May 2026", "statusLabel": "11 days left", "tone": "orange" }
   ],
   "latestGrades": [
-    { "id": "grade-is402-quiz", "course": "Enterprise Systems (IS402)", "assessment": "Quiz 4", "type": "Quiz", "grade": "A (4.0)", "date": "18 Apr 2026", "tone": "green" },
-    { "id": "grade-is418-lab", "course": "Business Intelligence (IS418)", "assessment": "Lab 5", "type": "Lab", "grade": "A- (3.7)", "date": "12 Apr 2026", "tone": "green" },
-    { "id": "grade-mgmt310-midterm", "course": "Management (MGMT310)", "assessment": "Midterm", "type": "Exam", "grade": "B+ (3.3)", "date": "09 Apr 2026", "tone": "blue" }
+    { "id": "grade-is402-quiz", "course": "Enterprise Systems (IS402)", "assessment": "Quiz 4", "type": "Quiz", "grade": "10/10", "date": "18 Apr 2026", "tone": "green" },
+    { "id": "grade-is418-lab", "course": "Business Intelligence (IS418)", "assessment": "Lab 5", "type": "Lab", "grade": "9/10", "date": "12 Apr 2026", "tone": "green" },
+    { "id": "grade-mgmt310-midterm", "course": "Management (MGMT310)", "assessment": "Midterm", "type": "Exam", "grade": "8/10", "date": "09 Apr 2026", "tone": "blue" }
   ],
   "attendanceWarning": {
     "courseCode": "MGMT310",

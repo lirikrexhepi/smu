@@ -1,0 +1,37 @@
+{
+  "studentKey": "s1005",
+  "academicYear": "Spring 2025/26",
+  "defaultSemester": "8",
+  "semesters": [
+    { "id": "8", "label": "Semester 8 (Spring 2025/26)" }
+  ],
+  "summary": {
+    "averageGrade": 8.4,
+    "gradeStatus": "Good",
+    "totalCreditsEarned": 112,
+    "requiredCredits": 120,
+    "coursesCompleted": 27,
+    "completionPercentage": 93,
+    "academicStanding": "Good Standing",
+    "eligibilityStatus": "Eligible"
+  },
+  "gradeDistribution": [
+    { "grade": 10, "label": "Excellent", "count": 7, "percentage": 25 },
+    { "grade": 9, "label": "Very Good", "count": 7, "percentage": 26 },
+    { "grade": 8, "label": "Good", "count": 8, "percentage": 30 },
+    { "grade": 7, "label": "Satisfactory", "count": 3, "percentage": 11 },
+    { "grade": 6, "label": "Sufficient", "count": 1, "percentage": 4 },
+    { "grade": 5, "label": "Failed / Not Passed", "count": 1, "percentage": 4 }
+  ],
+  "courseGrades": [
+    { "courseId": "cs310", "semesterId": "8", "numericGrade": 9, "gradePoints": 9, "status": "passed" },
+    { "courseId": "cs308", "semesterId": "8", "numericGrade": 8, "gradePoints": 8, "status": "passed" },
+    { "courseId": "cs306", "semesterId": "8", "numericGrade": 7, "gradePoints": 7, "status": "passed" },
+    { "courseId": "cs304", "semesterId": "8", "numericGrade": 8, "gradePoints": 8, "status": "passed" },
+    { "courseId": "math204", "semesterId": "8", "numericGrade": 10, "gradePoints": 10, "status": "passed" }
+  ],
+  "transcriptAction": {
+    "label": "View Full Transcript",
+    "status": "planned"
+  }
+}

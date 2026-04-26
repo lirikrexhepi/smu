@@ -142,6 +142,7 @@ export type StudentCourseOverviewItem = {
   enrollmentStatus: StudentCourseStatus
   enrollmentStatusLabel: string
   currentGrade: string
+  currentGradePoints: string
   attendancePercentage: number
   nextImportantEvent: StudentCourseEvent | null
 }
@@ -199,6 +200,7 @@ export type StudentCourseAttendance = {
 
 export type StudentCourseGrades = {
   currentGrade: string
+  currentGradePoints: string
   scale: string
   breakdown: Array<{ component: string; weight: number }>
   records: Array<{
@@ -262,6 +264,7 @@ export type StudentCourseDetail = {
     status: StudentCourseStatus
     statusLabel: string
     currentGrade: string
+    currentGradePoints: string
     attendancePercentage: number
     nextImportantEventId: string
     enrolledAt: string
@@ -367,4 +370,71 @@ export type StudentAttendance = {
   lastRecorded: StudentAttendanceLastRecorded | null
   weeklySchedule: StudentAttendanceScheduleDay[]
   history: StudentAttendanceHistoryRecord[]
+}
+
+export type StudentGradesTranscriptSemesterOption = {
+  id: string
+  label: string
+}
+
+export type StudentGradesTranscriptCourseOption = {
+  courseId: string
+  code: string
+  name: string
+  label: string
+}
+
+export type StudentGradesTranscriptSummary = {
+  averageGrade: number
+  gradeStatus: string
+  totalCreditsEarned: number
+  requiredCredits: number
+  coursesCompleted: number
+  completionPercentage: number
+  academicStanding: string
+  eligibilityStatus: string
+}
+
+export type StudentGradeOverviewItem = {
+  courseId: string
+  courseCode: string
+  numericGrade: number
+}
+
+export type StudentGradeDistributionItem = {
+  grade: number
+  label: string
+  count: number
+  percentage: number
+}
+
+export type StudentCourseGradeRow = {
+  courseId: string
+  courseCode: string
+  courseName: string
+  credits: number
+  numericGrade: number
+  displayGrade: string
+  gradePoints: number
+  status: 'passed' | 'failed' | 'in-progress' | string
+  statusLabel: string
+}
+
+export type StudentGradesTranscript = {
+  studentKey: string
+  academicYear: string
+  selectedSemester: string
+  selectedCourseId: string | null
+  filters: {
+    semesters: StudentGradesTranscriptSemesterOption[]
+    courses: StudentGradesTranscriptCourseOption[]
+  }
+  summary: StudentGradesTranscriptSummary
+  gradeOverview: StudentGradeOverviewItem[]
+  gradeDistribution: StudentGradeDistributionItem[]
+  courseGrades: StudentCourseGradeRow[]
+  transcriptAction: {
+    label: string
+    status: string
+  }
 }

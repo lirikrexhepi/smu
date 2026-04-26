@@ -490,9 +490,11 @@ function GradesTab({ course }: { course: StudentCourseDetail }) {
         </CardHeader>
         <CardContent>
           <div className="rounded-lg border border-blue-100 bg-blue-50 p-4">
-            <p className="text-sm font-medium text-blue-700">Current Grade</p>
-            <p className="mt-2 text-4xl font-semibold text-blue-700">{course.grades.currentGrade || 'Pending'}</p>
-            <p className="mt-1 text-sm text-slate-600">{course.grades.scale}</p>
+            <p className="text-sm font-medium text-blue-700">Current Grade Points</p>
+            <p className="mt-2 text-4xl font-semibold text-blue-700">{course.grades.currentGradePoints || 'Pending'}</p>
+            <p className="mt-1 text-sm text-slate-600">
+              {course.grades.currentGrade ? `Grade ${course.grades.currentGrade} - ${course.grades.scale}` : course.grades.scale}
+            </p>
           </div>
           <div className="mt-5 space-y-4">
             {course.grades.breakdown.map((item) => (

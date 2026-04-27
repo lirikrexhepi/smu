@@ -10,6 +10,7 @@ use App\Services\AuthService;
 use App\Services\SessionService;
 use App\Validators\LoginRequestValidator;
 
+
 final class AuthController
 {
     public function __construct(
@@ -19,36 +20,40 @@ final class AuthController
     ) {
     }
 
-    /**
-     * @param array<string, string> $params
-     */
+    
     public function login(Request $request, array $params = []): Response
     {
-        $errors = $this->validator->validate($request->body());
+        $body = $request->body();
+        $errors = $this->validator->validate($body);
 
         if ($errors !== []) {
             return Response::error('Validation failed', 422, $errors);
         }
 
         $result = $this->authService->attemptLogin(
-            (string) $request->body()['identifier'],
-            (string) $request->body()['password'],
+            (string) ($body['identifier'] ?? ''),
+            (string) ($body['password'] ?? ''),
         );
 
         if ($result === null) {
-            return Response::error('Invalid email, ID, or password', 401, [
-                'credentials' => ['The supplied credentials do not match a demo user.'],
+            return Response::error('Invalid credentials', 401, [
+                'auth' => ['The credentials provided do not match our records.'],
             ]);
         }
 
         $this->sessions->login($result['user']);
 
-        return Response::success($result, 'Login successful');
+    
+        return Response::success([
+            'user' => $result['user'],
+            'role' => $result['user']['role'] ?? 'guest',
+           
+            'redirectTo' => ($result['user']['role'] === 'professor') ? '/professor/dashboard' : '/student/dashboard'
+        ], 'Login successful');
     }
 
-    /**
-     * @param array<string, string> $params
-     */
+
+
     public function logout(Request $request, array $params = []): Response
     {
         $this->sessions->logout();
@@ -56,9 +61,7 @@ final class AuthController
         return Response::success(null, 'Logout successful');
     }
 
-    /**
-     * @param array<string, string> $params
-     */
+   
     public function session(Request $request, array $params = []): Response
     {
         $user = $this->sessions->user();
@@ -73,6 +76,7 @@ final class AuthController
         return Response::success([
             'authenticated' => true,
             'user' => $user,
+            'role' => $user['role'] ?? 'guest',
         ], 'Session active');
     }
 }

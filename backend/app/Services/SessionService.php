@@ -23,17 +23,6 @@ final class SessionService
         $_SESSION[self::USER_KEY] = $user;
     }
 
-    public function hasUser(): bool
-    {
-        if (!$this->canReadSession()) {
-            return false;
-        }
-
-        $this->start();
-
-        return isset($_SESSION[self::USER_KEY]) && is_array($_SESSION[self::USER_KEY]);
-    }
-
     /**
      * @return array<string, mixed>|null
      */
@@ -47,6 +36,23 @@ final class SessionService
         $user = $_SESSION[self::USER_KEY] ?? null;
 
         return is_array($user) ? $user : null;
+    }
+
+    public function role(): ?string
+    {
+        $user = $this->user();
+
+        return is_string($user['role'] ?? null) ? $user['role'] : null;
+    }
+
+    public function hasRole(string $role): bool
+    {
+        return $this->role() === $role;
+    }
+
+    public function hasUser(): bool
+    {
+        return $this->user() !== null;
     }
 
     public function logout(): void

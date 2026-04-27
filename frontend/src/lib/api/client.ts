@@ -8,6 +8,33 @@ export type ApiEnvelope<T> = {
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
 
+function emptyEnvelope<T>(response: Response): ApiEnvelope<T> {
+  return {
+    success: response.ok,
+    data: null as T,
+    message: response.ok ? null : 'API request failed',
+    errors: null,
+    meta: {},
+  }
+}
+
+async function parseApiResponse<T>(response: Response, fallbackMessage: string): Promise<ApiEnvelope<T>> {
+  const text = await response.text()
+  let payload: ApiEnvelope<T>
+
+  try {
+    payload = text.trim() === '' ? emptyEnvelope<T>(response) : (JSON.parse(text) as ApiEnvelope<T>)
+  } catch {
+    throw new Error(fallbackMessage)
+  }
+
+  if (!response.ok) {
+    throw new Error(payload.message ?? fallbackMessage)
+  }
+
+  return payload
+}
+
 export function apiAssetUrl(path: string | null | undefined): string | null {
   if (!path) {
     return null
@@ -26,23 +53,19 @@ export function apiAssetUrl(path: string | null | undefined): string | null {
 
 export async function apiGet<T>(path: string): Promise<ApiEnvelope<T>> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
+    credentials: 'include',
     headers: {
       Accept: 'application/json',
     },
   })
 
-  const payload = (await response.json()) as ApiEnvelope<T>
-
-  if (!response.ok) {
-    throw new Error(payload.message ?? 'API request failed')
-  }
-
-  return payload
+  return parseApiResponse<T>(response, 'API request failed')
 }
 
 export async function apiPost<T>(path: string, body: Record<string, unknown>): Promise<ApiEnvelope<T>> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: 'POST',
+    credentials: 'include',
     headers: {
       Accept: 'application/json',
       'Content-Type': 'application/json',
@@ -50,18 +73,13 @@ export async function apiPost<T>(path: string, body: Record<string, unknown>): P
     body: JSON.stringify(body),
   })
 
-  const payload = (await response.json()) as ApiEnvelope<T>
-
-  if (!response.ok) {
-    throw new Error(payload.message ?? 'API request failed')
-  }
-
-  return payload
+  return parseApiResponse<T>(response, 'API request failed')
 }
 
 export async function apiPatch<T>(path: string, body: Record<string, unknown>): Promise<ApiEnvelope<T>> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: 'PATCH',
+    credentials: 'include',
     headers: {
       Accept: 'application/json',
       'Content-Type': 'application/json',
@@ -69,29 +87,18 @@ export async function apiPatch<T>(path: string, body: Record<string, unknown>): 
     body: JSON.stringify(body),
   })
 
-  const payload = (await response.json()) as ApiEnvelope<T>
-
-  if (!response.ok) {
-    throw new Error(payload.message ?? 'API request failed')
-  }
-
-  return payload
+  return parseApiResponse<T>(response, 'API request failed')
 }
 
 export async function apiUpload<T>(path: string, formData: FormData): Promise<ApiEnvelope<T>> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: 'POST',
+    credentials: 'include',
     headers: {
       Accept: 'application/json',
     },
     body: formData,
   })
 
-  const payload = (await response.json()) as ApiEnvelope<T>
-
-  if (!response.ok) {
-    throw new Error(payload.message ?? 'API upload failed')
-  }
-
-  return payload
+  return parseApiResponse<T>(response, 'API upload failed')
 }

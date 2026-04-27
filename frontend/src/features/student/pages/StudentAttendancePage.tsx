@@ -19,7 +19,6 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { getStudentAttendance } from '@/lib/api/student'
-import { getStoredAuthUser } from '@/lib/auth/session'
 import { cn } from '@/lib/utils'
 import type {
   StudentAttendance,
@@ -37,8 +36,6 @@ const timeSlots = ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00']
 type ViewMode = 'week' | 'day'
 
 export function StudentAttendancePage() {
-  const storedUser = getStoredAuthUser()
-  const studentKey = storedUser?.role === 'student' ? storedUser.institutionId : null
   const [attendance, setAttendance] = useState<StudentAttendance | null>(null)
   const [selectedCourse, setSelectedCourse] = useState('all')
   const [selectedSemester, setSelectedSemester] = useState('all')
@@ -46,15 +43,9 @@ export function StudentAttendancePage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!studentKey) {
-      setAttendance(null)
-      setErrorMessage('Login as a student to load attendance')
-      return
-    }
-
     let isMounted = true
 
-    getStudentAttendance(studentKey, {
+    getStudentAttendance({
       courseId: selectedCourse,
       semester: selectedSemester,
     })
@@ -81,7 +72,7 @@ export function StudentAttendancePage() {
     return () => {
       isMounted = false
     }
-  }, [studentKey, selectedCourse, selectedSemester])
+  }, [selectedCourse, selectedSemester])
 
   const visibleDays = useMemo(() => {
     if (!attendance) {

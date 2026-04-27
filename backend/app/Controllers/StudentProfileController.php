@@ -8,6 +8,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\DTO\StudentProfileUpdateData;
 use App\Services\StudentProfileService;
+use App\Services\StudentSessionService;
 use App\Validators\StudentProfileAvatarValidator;
 use App\Validators\StudentProfileUpdateValidator;
 use RuntimeException;
@@ -18,6 +19,7 @@ final class StudentProfileController
         private readonly StudentProfileService $profileService,
         private readonly StudentProfileUpdateValidator $validator,
         private readonly StudentProfileAvatarValidator $avatarValidator,
+        private readonly StudentSessionService $students,
     ) {
     }
 
@@ -26,11 +28,11 @@ final class StudentProfileController
      */
     public function show(Request $request, array $params = []): Response
     {
-        $studentKey = $this->studentKey($request);
+        $studentKey = $this->students->studentKey();
 
         if ($studentKey === null) {
-            return Response::error('Student key is required', 422, [
-                'studentKey' => ['Login as a student or provide studentKey.'],
+            return Response::error('Student session is required', 403, [
+                'session' => ['Login as a student to access this resource.'],
             ]);
         }
 
@@ -60,11 +62,11 @@ final class StudentProfileController
             return Response::error('Validation failed', 422, $errors);
         }
 
-        $studentKey = $this->studentKey($request);
+        $studentKey = $this->students->studentKey();
 
         if ($studentKey === null) {
-            return Response::error('Student key is required', 422, [
-                'studentKey' => ['Login as a student or provide studentKey.'],
+            return Response::error('Student session is required', 403, [
+                'session' => ['Login as a student to access this resource.'],
             ]);
         }
 
@@ -101,11 +103,11 @@ final class StudentProfileController
             return Response::error('Validation failed', 422, ['avatar' => ['Profile image is required.']]);
         }
 
-        $studentKey = $this->studentKey($request);
+        $studentKey = $this->students->studentKey();
 
         if ($studentKey === null) {
-            return Response::error('Student key is required', 422, [
-                'studentKey' => ['Login as a student or provide studentKey.'],
+            return Response::error('Student session is required', 403, [
+                'session' => ['Login as a student to access this resource.'],
             ]);
         }
 
@@ -124,13 +126,5 @@ final class StudentProfileController
             'Student profile image updated',
             ['source' => 'json-mock-repository', 'auditAction' => 'profile.avatar.update', 'studentKey' => $studentKey],
         );
-    }
-
-    private function studentKey(Request $request): ?string
-    {
-        $studentKey = (string) ($request->query()['studentKey'] ?? $request->header('x-sems-student-key', ''));
-        $studentKey = trim($studentKey);
-
-        return $studentKey === '' ? null : $studentKey;
     }
 }

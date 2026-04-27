@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { getStudentGradesTranscript } from '@/lib/api/student'
-import { getStoredAuthUser } from '@/lib/auth/session'
 import { cn } from '@/lib/utils'
 import type {
   StudentCourseGradeRow,
@@ -24,8 +23,6 @@ const maxGradeValue = 10
 const chartAnimationMs = 900
 
 export function StudentGradesPage() {
-  const storedUser = getStoredAuthUser()
-  const studentKey = storedUser?.role === 'student' ? storedUser.institutionId : null
   const [gradesTranscript, setGradesTranscript] = useState<StudentGradesTranscript | null>(null)
   const [selectedSemester, setSelectedSemester] = useState('')
   const [selectedCourse, setSelectedCourse] = useState('all')
@@ -33,15 +30,9 @@ export function StudentGradesPage() {
   const [animationProgress, setAnimationProgress] = useState(0)
 
   useEffect(() => {
-    if (!studentKey) {
-      setGradesTranscript(null)
-      setErrorMessage('Login as a student to load grades and transcript')
-      return
-    }
-
     let isMounted = true
 
-    getStudentGradesTranscript(studentKey, {
+    getStudentGradesTranscript({
       semester: selectedSemester,
       courseId: selectedCourse,
     })
@@ -68,7 +59,7 @@ export function StudentGradesPage() {
     return () => {
       isMounted = false
     }
-  }, [studentKey, selectedSemester, selectedCourse])
+  }, [selectedSemester, selectedCourse])
 
   useEffect(() => {
     if (!gradesTranscript) {

@@ -5,6 +5,7 @@ import { AuthLayout } from '@/components/layout/AuthLayout'
 import { ProfessorLayout } from '@/components/layout/ProfessorLayout'
 import { StudentLayout } from '@/components/layout/StudentLayout'
 import { AdminDashboardPage } from '@/features/admin/pages/AdminDashboardPage'
+import { ProtectedRoute } from '@/features/auth/components/ProtectedRoute'
 import { LoginPage } from '@/features/auth/pages/LoginPage'
 import { ProfessorAttendancePage } from '@/features/professor/pages/ProfessorAttendancePage'
 import { ProfessorCoursesPage } from '@/features/professor/pages/ProfessorCoursesPage'
@@ -35,7 +36,11 @@ export const router = createBrowserRouter([
   },
   {
     path: '/student',
-    element: <StudentLayout />,
+    element: (
+      <ProtectedRoute role="student">
+        <StudentLayout />
+      </ProtectedRoute>
+    ),
     children: [
       {
         index: true,
@@ -77,7 +82,11 @@ export const router = createBrowserRouter([
   },
   {
     path: '/professor',
-    element: <ProfessorLayout />,
+    element: (
+      <ProtectedRoute role="professor">
+        <ProfessorLayout />
+      </ProtectedRoute>
+    ),
     children: [
       {
         index: true,
@@ -103,7 +112,11 @@ export const router = createBrowserRouter([
   },
   {
     path: '/admin',
-    element: <AdminLayout />,
+    element: (
+      <ProtectedRoute role="admin">
+        <AdminLayout />
+      </ProtectedRoute>
+    ),
     children: [
       {
         index: true,

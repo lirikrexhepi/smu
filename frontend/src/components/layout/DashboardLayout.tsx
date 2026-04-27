@@ -13,6 +13,7 @@ import {
 import { cn } from '@/lib/utils'
 import type { NavItem } from '@/components/layout/navigation'
 import { apiAssetUrl } from '@/lib/api/client'
+import { logout } from '@/lib/api/auth'
 import { getStudentProfile } from '@/lib/api/student'
 import { AUTH_USER_CHANGED_EVENT, clearAuthUser, getStoredAuthUser, storeAuthUser } from '@/lib/auth/session'
 import type { AuthUser } from '@/types/auth'
@@ -109,7 +110,12 @@ export function DashboardLayout({ role, portalLabel, userLabel, navItems }: Dash
     }
   }, [isMobileSidebarOpen])
 
-  function handleLogout() {
+  async function handleLogout() {
+    try {
+      await logout()
+    } catch {
+    }
+
     clearAuthUser()
     setIsMobileSidebarOpen(false)
     navigate('/login', { replace: true })

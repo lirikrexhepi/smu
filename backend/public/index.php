@@ -7,7 +7,12 @@ use App\Core\MiddlewarePipeline;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Router;
+use App\Middleware\AuthSessionMiddleware;
 use App\Middleware\CorsMiddleware;
+use App\Services\SessionService;
+
+ini_set('max_execution_time', '0');
+set_time_limit(0);
 
 if (PHP_SAPI === 'cli-server') {
     $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
@@ -27,6 +32,11 @@ $router = new Router();
 
 $pipeline = new MiddlewarePipeline([
     new CorsMiddleware($config->get('cors', [])),
+    new AuthSessionMiddleware(new SessionService(__DIR__ . '/../storage/sessions'), [
+        '/api/student',
+        '/api/professor',
+        '/api/admin',
+    ]),
 ]);
 
 try {

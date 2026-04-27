@@ -23,6 +23,12 @@ export function LoginPage() {
 
     try {
       const response = await login(identifier, password)
+
+      if (!response.success) {
+        setError(response.message ?? 'Invalid credentials')
+        return
+      }
+
       storeAuthUser(response.data.user)
       navigate(response.data.redirectPath, { replace: true })
     } catch (requestError) {

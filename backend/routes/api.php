@@ -38,10 +38,9 @@ return static function (Router $router): void {
     $userRepository = new MockUserRepository($studentProfileRepository);
     $authService = new AuthService($userRepository);
     $authController = new AuthController($authService, new LoginRequestValidator(), $sessionService);
-    $router->post('/api/auth/login', [
-        $authController,
-        'login',
-    ]);
+
+    $router->post('/api/auth/login', [$authController, 'login']);
+    $router->get('/api/auth/me', [$authController, 'me']);
     $router->get('/api/auth/session', [$authController, 'session']);
     $router->post('/api/auth/logout', [$authController, 'logout']);
 
@@ -50,10 +49,7 @@ return static function (Router $router): void {
 
     $studentDashboardController = new StudentDashboardController($studentDashboardService, $studentSessionService);
 
-    $router->get('/api/student/dashboard', [
-        $studentDashboardController,
-        'show',
-    ]);
+    $router->get('/api/student/dashboard', [$studentDashboardController, 'show']);
 
     $studentCoursesRepository = new MockStudentCoursesRepository();
     $studentCoursesController = new StudentCoursesController(

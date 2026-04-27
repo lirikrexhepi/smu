@@ -12,20 +12,19 @@ final class SessionService
     {
     }
 
-  
+    /**
+     * @param array<string, mixed> $user
+     */
     public function login(array $user): void
     {
         $this->start();
-        
-        // Prevents Session Fixation attacks
         session_regenerate_id(true);
 
         $_SESSION[self::USER_KEY] = $user;
     }
 
     /**
-     * Kthen te dhenat e perdoruesit nga sesioni
-    
+     * @return array<string, mixed>|null
      */
     public function user(): ?array
     {
@@ -39,16 +38,13 @@ final class SessionService
         return is_array($user) ? $user : null;
     }
 
-    /**
-     * Ndihmon qe te merr rolin e perdoruesit menjher(student,profesor).
-     */
     public function role(): ?string
     {
         $user = $this->user();
-        return $user['role'] ?? null;
+
+        return is_string($user['role'] ?? null) ? $user['role'] : null;
     }
 
-    
     public function hasRole(string $role): bool
     {
         return $this->role() === $role;
@@ -99,14 +95,15 @@ final class SessionService
             if (!is_dir($this->savePath)) {
                 mkdir($this->savePath, 0775, true);
             }
+
             session_save_path($this->savePath);
         }
 
         session_set_cookie_params([
-            'lifetime' => 0, // Sesioni perfundon kur mbyllet browseri
+            'lifetime' => 0,
             'path' => '/',
-            'secure' => false, // nesee perdoret https behet "true"
-            'httponly' => true, // nuk e lejon Js te ket acces ne cookies(pra largimi nga varja e local storage sa me shume)
+            'secure' => false,
+            'httponly' => true,
             'samesite' => 'Lax',
         ]);
 

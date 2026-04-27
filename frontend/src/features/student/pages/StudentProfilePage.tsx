@@ -43,7 +43,6 @@ const tabs: Array<{ id: ProfileTab; label: string }> = [
 
 export function StudentProfilePage() {
   const storedUser = getStoredAuthUser()
-  const studentKey = storedUser?.role === 'student' ? storedUser.institutionId : null
   const [profile, setProfile] = useState<StudentProfile | null>(null)
   const [form, setForm] = useState<StudentProfileUpdate | null>(null)
   const [activeTab, setActiveTab] = useState<ProfileTab>('personal')
@@ -55,15 +54,7 @@ export function StudentProfilePage() {
   const avatarInputRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
-    if (!studentKey) {
-      setProfile(null)
-      setForm(null)
-      setErrorMessage('Login as a student to load profile data')
-      setStatusMessage('Profile unavailable')
-      return
-    }
-
-    getStudentProfile(studentKey)
+    getStudentProfile()
       .then((response) => {
         setProfile(response.data)
         setForm(formFromProfile(response.data))
@@ -74,7 +65,7 @@ export function StudentProfilePage() {
         setErrorMessage(error instanceof Error ? error.message : 'Unable to load student profile')
         setStatusMessage('Profile unavailable')
       })
-  }, [studentKey])
+  }, [])
 
   const emergencySummary = useMemo(() => {
     if (!profile) {
@@ -108,7 +99,7 @@ export function StudentProfilePage() {
   }
 
   async function saveProfile() {
-    if (!form || !studentKey) {
+    if (!form) {
       return
     }
 
@@ -116,7 +107,7 @@ export function StudentProfilePage() {
     setErrorMessage(null)
 
     try {
-      const response = await updateStudentProfile(form, studentKey)
+      const response = await updateStudentProfile(form)
       setProfile(response.data)
       setForm(formFromProfile(response.data))
       setIsEditing(false)
@@ -130,7 +121,7 @@ export function StudentProfilePage() {
   }
 
   async function uploadAvatar(file: File | undefined) {
-    if (!file || !studentKey) {
+    if (!file) {
       return
     }
 
@@ -138,7 +129,7 @@ export function StudentProfilePage() {
     setErrorMessage(null)
 
     try {
-      const response = await uploadStudentProfileAvatar(file, studentKey)
+      const response = await uploadStudentProfileAvatar(file)
       setProfile(response.data)
       setForm(formFromProfile(response.data))
       setStatusMessage(response.message ?? 'Profile image updated')

@@ -69,7 +69,7 @@ export function DashboardLayout({ role, portalLabel, userLabel, navItems }: Dash
 
     let isMounted = true
 
-    getStudentProfile(displayUser.institutionId)
+    getStudentProfile()
       .then((response) => {
         if (!isMounted) {
           return

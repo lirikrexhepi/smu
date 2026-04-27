@@ -10,7 +10,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { getStudentCourses } from '@/lib/api/student'
-import { getStoredAuthUser } from '@/lib/auth/session'
 import { cn } from '@/lib/utils'
 import type {
   StudentCourseEvent,
@@ -23,8 +22,6 @@ import type {
 type StatusFilter = StudentCourseStatus | 'all'
 
 export function StudentCoursesPage() {
-  const storedUser = getStoredAuthUser()
-  const studentKey = storedUser?.role === 'student' ? storedUser.institutionId : null
   const [overview, setOverview] = useState<StudentCoursesOverview | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [semesterFilter, setSemesterFilter] = useState('all')
@@ -32,15 +29,9 @@ export function StudentCoursesPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!studentKey) {
-      setOverview(null)
-      setErrorMessage('Login as a student to load courses')
-      return
-    }
-
     let isMounted = true
 
-    getStudentCourses(studentKey)
+    getStudentCourses()
       .then((response) => {
         if (!isMounted) {
           return
@@ -61,7 +52,7 @@ export function StudentCoursesPage() {
     return () => {
       isMounted = false
     }
-  }, [studentKey])
+  }, [])
 
   const filteredCourses = useMemo(() => {
     if (!overview) {

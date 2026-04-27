@@ -23,6 +23,7 @@ use App\Services\StudentCoursesService;
 use App\Services\StudentDashboardService;
 use App\Services\StudentGradesTranscriptService;
 use App\Services\StudentProfileService;
+use App\Services\StudentSessionService;
 use App\Validators\LoginRequestValidator;
 use App\Validators\StudentProfileAvatarValidator;
 use App\Validators\StudentProfileUpdateValidator;
@@ -32,6 +33,7 @@ return static function (Router $router): void {
 
     $studentProfileRepository = new MockStudentProfileRepository();
     $sessionService = new SessionService(__DIR__ . '/../storage/sessions');
+    $studentSessionService = new StudentSessionService($sessionService);
 
     $userRepository = new MockUserRepository($studentProfileRepository);
     $authService = new AuthService($userRepository);
@@ -46,7 +48,7 @@ return static function (Router $router): void {
     $studentDashboardRepository = new MockStudentDashboardRepository($studentProfileRepository);
     $studentDashboardService = new StudentDashboardService($studentDashboardRepository);
 
-    $studentDashboardController = new StudentDashboardController($studentDashboardService);
+    $studentDashboardController = new StudentDashboardController($studentDashboardService, $studentSessionService);
 
     $router->get('/api/student/dashboard', [
         $studentDashboardController,
@@ -54,19 +56,24 @@ return static function (Router $router): void {
     ]);
 
     $studentCoursesRepository = new MockStudentCoursesRepository();
-    $studentCoursesController = new StudentCoursesController(new StudentCoursesService($studentCoursesRepository));
+    $studentCoursesController = new StudentCoursesController(
+        new StudentCoursesService($studentCoursesRepository),
+        $studentSessionService,
+    );
 
     $router->get('/api/student/courses', [$studentCoursesController, 'index']);
     $router->get('/api/student/courses/{courseId}', [$studentCoursesController, 'show']);
 
     $studentAttendanceController = new StudentAttendanceController(
         new StudentAttendanceService(new MockStudentAttendanceRepository()),
+        $studentSessionService,
     );
 
     $router->get('/api/student/attendance', [$studentAttendanceController, 'show']);
 
     $studentGradesTranscriptController = new StudentGradesTranscriptController(
         new StudentGradesTranscriptService(new MockStudentGradesTranscriptRepository()),
+        $studentSessionService,
     );
 
     $router->get('/api/student/grades-transcript', [$studentGradesTranscriptController, 'show']);
@@ -76,6 +83,7 @@ return static function (Router $router): void {
         $studentProfileService,
         new StudentProfileUpdateValidator(),
         new StudentProfileAvatarValidator(),
+        $studentSessionService,
     );
 
     $router->get('/api/student/profile', [$studentProfileController, 'show']);

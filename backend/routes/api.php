@@ -31,37 +31,18 @@ return static function (Router $router): void {
     $router->get('/api/health', [new HealthController(), 'show']);
 
     $studentProfileRepository = new MockStudentProfileRepository();
-
     $sessionService = new SessionService(__DIR__ . '/../storage/sessions');
 
     $userRepository = new MockUserRepository($studentProfileRepository);
     $authService = new AuthService($userRepository);
-
-    $authController = new AuthController(
-        $authService,
-        new LoginRequestValidator(),
-        $sessionService,
-    );
-
+    $authController = new AuthController($authService, new LoginRequestValidator(), $sessionService);
     $router->post('/api/auth/login', [
         $authController,
         'login',
     ]);
-
-    $router->get('/api/auth/me', [
-        $authController,
-        'me',
-    ]);
-
-    $router->get('/api/auth/session', [
-        $authController,
-        'session',
-    ]);
-
-    $router->post('/api/auth/logout', [
-        $authController,
-        'logout',
-    ]);
+    $router->get('/api/auth/me', [$authController, 'me']);
+    $router->get('/api/auth/session', [$authController, 'session']);
+    $router->post('/api/auth/logout', [$authController, 'logout']);
 
     $studentDashboardRepository = new MockStudentDashboardRepository($studentProfileRepository);
     $studentDashboardService = new StudentDashboardService($studentDashboardRepository);
@@ -74,58 +55,31 @@ return static function (Router $router): void {
     ]);
 
     $studentCoursesRepository = new MockStudentCoursesRepository();
-    $studentCoursesController = new StudentCoursesController(
-        new StudentCoursesService($studentCoursesRepository)
-    );
+    $studentCoursesController = new StudentCoursesController(new StudentCoursesService($studentCoursesRepository));
 
-    $router->get('/api/student/courses', [
-        $studentCoursesController,
-        'index',
-    ]);
-
-    $router->get('/api/student/courses/{courseId}', [
-        $studentCoursesController,
-        'show',
-    ]);
+    $router->get('/api/student/courses', [$studentCoursesController, 'index']);
+    $router->get('/api/student/courses/{courseId}', [$studentCoursesController, 'show']);
 
     $studentAttendanceController = new StudentAttendanceController(
         new StudentAttendanceService(new MockStudentAttendanceRepository()),
     );
 
-    $router->get('/api/student/attendance', [
-        $studentAttendanceController,
-        'show',
-    ]);
+    $router->get('/api/student/attendance', [$studentAttendanceController, 'show']);
 
     $studentGradesTranscriptController = new StudentGradesTranscriptController(
         new StudentGradesTranscriptService(new MockStudentGradesTranscriptRepository()),
     );
 
-    $router->get('/api/student/grades-transcript', [
-        $studentGradesTranscriptController,
-        'show',
-    ]);
+    $router->get('/api/student/grades-transcript', [$studentGradesTranscriptController, 'show']);
 
     $studentProfileService = new StudentProfileService($studentProfileRepository);
-
     $studentProfileController = new StudentProfileController(
         $studentProfileService,
         new StudentProfileUpdateValidator(),
         new StudentProfileAvatarValidator(),
     );
 
-    $router->get('/api/student/profile', [
-        $studentProfileController,
-        'show',
-    ]);
-
-    $router->patch('/api/student/profile', [
-        $studentProfileController,
-        'update',
-    ]);
-
-    $router->post('/api/student/profile/avatar', [
-        $studentProfileController,
-        'uploadAvatar',
-    ]);
+    $router->get('/api/student/profile', [$studentProfileController, 'show']);
+    $router->patch('/api/student/profile', [$studentProfileController, 'update']);
+    $router->post('/api/student/profile/avatar', [$studentProfileController, 'uploadAvatar']);
 };

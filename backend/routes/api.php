@@ -33,10 +33,11 @@ return static function (Router $router): void {
 
     $userRepository = new MockUserRepository($studentProfileRepository);
     $authService = new AuthService($userRepository);
-    $router->post('/api/auth/login', [
-        new AuthController($authService, new LoginRequestValidator()),
-        'login',
-    ]);
+    $authController = new AuthController($authService, new LoginRequestValidator());
+
+    $router->post('/api/auth/login', [$authController, 'login']);
+    $router->get('/api/auth/me', [$authController, 'me']);
+    $router->post('/api/auth/logout', [$authController, 'logout']);
 
     $studentDashboardRepository = new MockStudentDashboardRepository($studentProfileRepository);
     $studentDashboardService = new StudentDashboardService($studentDashboardRepository);

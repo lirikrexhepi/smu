@@ -75,4 +75,14 @@ final class Response
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode($this->payload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
     }
+
+    public static function unauthorized(string $message = 'Unauthorized'): self
+    {
+        return self::error($message, 401);
+    }
+
+    public static function validation(array $errors): self
+    {
+        return self::error('Validation failed', 422, $errors);
+    }
 }

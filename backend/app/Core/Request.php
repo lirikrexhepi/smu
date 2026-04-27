@@ -141,4 +141,35 @@ final class Request
 
         return $uploadedFiles;
     }
+
+    public function getCookie(string $key): ?string
+    {
+        return $_COOKIE[$key] ?? null;
+    }
+
+    public function getAuthenticatedUserId(): ?string
+    {
+        $cookie = $this->getCookie('user_token');
+
+        if ($cookie === null) {
+            return null;
+        }
+
+        $decoded = base64_decode($cookie, true);
+
+        if ($decoded === false || !str_contains($decoded, '|')) {
+            return null;
+        }
+
+        [$userId, $hash] = explode('|', $decoded, 2);
+
+        $validHash = hash_hmac('sha256', $userId, 'replace_this_with_a_long_secret_key');
+
+        if (!hash_equals($validHash, $hash)) {
+            setcookie('user_token', '', time() - 3600, '/');
+            return null;
+        }
+
+        return $userId;
+    }
 }

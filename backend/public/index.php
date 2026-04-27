@@ -9,6 +9,7 @@ use App\Core\Response;
 use App\Core\Router;
 use App\Middleware\AuthSessionMiddleware;
 use App\Middleware\CorsMiddleware;
+use App\Middleware\RoleGuardMiddleware;
 use App\Services\SessionService;
 
 ini_set('max_execution_time', '0');
@@ -27,15 +28,21 @@ require __DIR__ . '/../vendor/autoload.php';
 
 $config = Config::fromDirectory(__DIR__ . '/../config');
 $router = new Router();
+$sessionService = new SessionService(__DIR__ . '/../storage/sessions');
 
 (require __DIR__ . '/../routes/api.php')($router);
 
 $pipeline = new MiddlewarePipeline([
     new CorsMiddleware($config->get('cors', [])),
-    new AuthSessionMiddleware(new SessionService(__DIR__ . '/../storage/sessions'), [
+    new AuthSessionMiddleware($sessionService, [
         '/api/student',
         '/api/professor',
         '/api/admin',
+    ]),
+    new RoleGuardMiddleware($sessionService, [
+        '/api/student' => ['student'],
+        '/api/professor' => ['professor'],
+        '/api/admin' => ['admin'],
     ]),
 ]);
 

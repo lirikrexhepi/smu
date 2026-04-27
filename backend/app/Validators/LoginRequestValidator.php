@@ -29,14 +29,6 @@ final class LoginRequestValidator implements ValidatorInterface
             $errors['password'][] = 'Password is required.';
         }
 
-        if (isset($payload['password']) && (string) $payload['password'] !== '') {
-            $password = (string) $payload['password'];
-
-            if (!preg_match('/^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[\W_]).{8,}$/', $password)) {
-                $errors['password'][] = 'Password must be at least 8 characters and contain uppercase, lowercase, number, and special character.';
-            }
-        }
-
         return $errors;
     }
 }

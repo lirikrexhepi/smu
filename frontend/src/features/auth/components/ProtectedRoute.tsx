@@ -11,11 +11,21 @@ type ProtectedRouteProps = {
   role: AuthRole
 }
 
+const dashboardByRole: Record<AuthRole, string> = {
+  admin: '/admin/dashboard',
+  professor: '/professor/dashboard',
+  student: '/student/dashboard',
+}
+
 export function ProtectedRoute({ children, role }: ProtectedRouteProps) {
   const [isAllowed, setIsAllowed] = useState<boolean | null>(null)
+  const [redirectPath, setRedirectPath] = useState('/login')
 
   useEffect(() => {
     let isMounted = true
+
+    setIsAllowed(null)
+    setRedirectPath('/login')
 
     getSession()
       .then((response) => {
@@ -23,13 +33,21 @@ export function ProtectedRoute({ children, role }: ProtectedRouteProps) {
           return
         }
 
-        if (!response.data.authenticated || response.data.user?.role !== role) {
+        if (!response.data.authenticated || response.data.user === null) {
           clearAuthUser()
+          setRedirectPath('/login')
           setIsAllowed(false)
           return
         }
 
         storeAuthUser(response.data.user)
+
+        if (response.data.user.role !== role) {
+          setRedirectPath(dashboardByRole[response.data.user.role])
+          setIsAllowed(false)
+          return
+        }
+
         setIsAllowed(true)
       })
       .catch(() => {
@@ -51,7 +69,7 @@ export function ProtectedRoute({ children, role }: ProtectedRouteProps) {
   }
 
   if (!isAllowed) {
-    return <Navigate to="/login" replace />
+    return <Navigate to={redirectPath} replace />
   }
 
   return children

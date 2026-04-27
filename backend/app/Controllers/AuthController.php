@@ -37,7 +37,7 @@ final class AuthController
         );
 
         if ($result === null) {
-            return Response::error('Invalid credentials', 401, [
+            return Response::error('Invalid credentials', 200, [
                 'auth' => ['The credentials provided do not match our records.'],
             ]);
         }

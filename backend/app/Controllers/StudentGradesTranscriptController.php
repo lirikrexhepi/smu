@@ -7,12 +7,15 @@ namespace App\Controllers;
 use App\Core\Request;
 use App\Core\Response;
 use App\Services\StudentGradesTranscriptService;
+use App\Services\StudentSessionService;
 use RuntimeException;
 
 final class StudentGradesTranscriptController
 {
-    public function __construct(private readonly StudentGradesTranscriptService $service)
-    {
+    public function __construct(
+        private readonly StudentGradesTranscriptService $service,
+        private readonly StudentSessionService $students,
+    ) {
     }
 
     /**
@@ -20,11 +23,11 @@ final class StudentGradesTranscriptController
      */
     public function show(Request $request, array $params = []): Response
     {
-        $studentKey = $this->studentKey($request);
+        $studentKey = $this->students->studentKey();
 
         if ($studentKey === null) {
-            return Response::error('Student key is required', 422, [
-                'studentKey' => ['Login as a student or provide studentKey.'],
+            return Response::error('Student session is required', 403, [
+                'session' => ['Login as a student to access this resource.'],
             ]);
         }
 
@@ -49,14 +52,6 @@ final class StudentGradesTranscriptController
                 'courseId' => $courseId,
             ],
         );
-    }
-
-    private function studentKey(Request $request): ?string
-    {
-        $studentKey = (string) ($request->query()['studentKey'] ?? $request->header('x-sems-student-key', ''));
-        $studentKey = trim($studentKey);
-
-        return $studentKey === '' ? null : $studentKey;
     }
 
     private function queryValue(Request $request, string $key): ?string

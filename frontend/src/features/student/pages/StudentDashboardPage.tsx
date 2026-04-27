@@ -19,7 +19,6 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { getStudentDashboard } from '@/lib/api/student'
-import { getStoredAuthUser } from '@/lib/auth/session'
 import { cn } from '@/lib/utils'
 import type {
   StudentDashboardClass,
@@ -44,21 +43,13 @@ const quickLinks = [
 ] as const
 
 export function StudentDashboardPage() {
-  const storedUser = getStoredAuthUser()
-  const studentKey = storedUser?.role === 'student' ? storedUser.institutionId : null
   const [dashboard, setDashboard] = useState<StudentDashboardSummary | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!studentKey) {
-      setDashboard(null)
-      setErrorMessage('Login as a student to load dashboard data')
-      return
-    }
-
     let isMounted = true
 
-    getStudentDashboard(studentKey)
+    getStudentDashboard()
       .then((response) => {
         if (!isMounted) {
           return
@@ -78,7 +69,7 @@ export function StudentDashboardPage() {
     return () => {
       isMounted = false
     }
-  }, [studentKey])
+  }, [])
 
   if (!dashboard) {
     return (

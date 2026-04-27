@@ -23,7 +23,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { apiAssetUrl } from '@/lib/api/client'
 import { getStudentCourseDetail } from '@/lib/api/student'
-import { getStoredAuthUser } from '@/lib/auth/session'
 import { cn } from '@/lib/utils'
 import type {
   StudentCourseAnnouncement,
@@ -47,22 +46,20 @@ type CourseTab = (typeof tabs)[number]['id']
 
 export function StudentCourseDetailPage() {
   const { courseId } = useParams()
-  const storedUser = getStoredAuthUser()
-  const studentKey = storedUser?.role === 'student' ? storedUser.institutionId : null
   const [course, setCourse] = useState<StudentCourseDetail | null>(null)
   const [activeTab, setActiveTab] = useState<CourseTab>('overview')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!studentKey || !courseId) {
+    if (!courseId) {
       setCourse(null)
-      setErrorMessage('Login as a student and select a course')
+      setErrorMessage('Select a course')
       return
     }
 
     let isMounted = true
 
-    getStudentCourseDetail(studentKey, courseId)
+    getStudentCourseDetail(courseId)
       .then((response) => {
         if (!isMounted) {
           return
@@ -82,7 +79,7 @@ export function StudentCourseDetailPage() {
     return () => {
       isMounted = false
     }
-  }, [courseId, studentKey])
+  }, [courseId])
 
   if (!course) {
     return (

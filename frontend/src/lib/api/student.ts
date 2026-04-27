@@ -9,25 +9,22 @@ import type {
   StudentProfileUpdate,
 } from '@/types/student'
 
-export function getStudentDashboard(studentKey: string) {
-  return apiGet<StudentDashboardSummary>(`/api/student/dashboard?studentKey=${encodeURIComponent(studentKey)}`)
+export function getStudentDashboard() {
+  return apiGet<StudentDashboardSummary>('/api/student/dashboard')
 }
 
-export function getStudentCourses(studentKey: string) {
-  return apiGet<StudentCoursesOverview>(`/api/student/courses?studentKey=${encodeURIComponent(studentKey)}`)
+export function getStudentCourses() {
+  return apiGet<StudentCoursesOverview>('/api/student/courses')
 }
 
-export function getStudentCourseDetail(studentKey: string, courseId: string) {
-  return apiGet<StudentCourseDetail>(
-    `/api/student/courses/${encodeURIComponent(courseId)}?studentKey=${encodeURIComponent(studentKey)}`,
-  )
+export function getStudentCourseDetail(courseId: string) {
+  return apiGet<StudentCourseDetail>(`/api/student/courses/${encodeURIComponent(courseId)}`)
 }
 
 export function getStudentAttendance(
-  studentKey: string,
   filters: { courseId?: string; semester?: string; week?: string } = {},
 ) {
-  const params = new URLSearchParams({ studentKey })
+  const params = new URLSearchParams()
 
   if (filters.courseId && filters.courseId !== 'all') {
     params.set('courseId', filters.courseId)
@@ -41,14 +38,15 @@ export function getStudentAttendance(
     params.set('week', filters.week)
   }
 
-  return apiGet<StudentAttendance>(`/api/student/attendance?${params.toString()}`)
+  const query = params.toString()
+
+  return apiGet<StudentAttendance>(`/api/student/attendance${query ? `?${query}` : ''}`)
 }
 
 export function getStudentGradesTranscript(
-  studentKey: string,
   filters: { semester?: string; courseId?: string } = {},
 ) {
-  const params = new URLSearchParams({ studentKey })
+  const params = new URLSearchParams()
 
   if (filters.semester) {
     params.set('semester', filters.semester)
@@ -58,20 +56,22 @@ export function getStudentGradesTranscript(
     params.set('courseId', filters.courseId)
   }
 
-  return apiGet<StudentGradesTranscript>(`/api/student/grades-transcript?${params.toString()}`)
+  const query = params.toString()
+
+  return apiGet<StudentGradesTranscript>(`/api/student/grades-transcript${query ? `?${query}` : ''}`)
 }
 
-export function getStudentProfile(studentKey: string) {
-  return apiGet<StudentProfile>(`/api/student/profile?studentKey=${encodeURIComponent(studentKey)}`)
+export function getStudentProfile() {
+  return apiGet<StudentProfile>('/api/student/profile')
 }
 
-export function updateStudentProfile(profile: StudentProfileUpdate, studentKey: string) {
-  return apiPatch<StudentProfile>(`/api/student/profile?studentKey=${encodeURIComponent(studentKey)}`, profile)
+export function updateStudentProfile(profile: StudentProfileUpdate) {
+  return apiPatch<StudentProfile>('/api/student/profile', profile)
 }
 
-export function uploadStudentProfileAvatar(file: File, studentKey: string) {
+export function uploadStudentProfileAvatar(file: File) {
   const formData = new FormData()
   formData.append('avatar', file)
 
-  return apiUpload<StudentProfile>(`/api/student/profile/avatar?studentKey=${encodeURIComponent(studentKey)}`, formData)
+  return apiUpload<StudentProfile>('/api/student/profile/avatar', formData)
 }

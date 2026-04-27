@@ -7,12 +7,15 @@ namespace App\Controllers;
 use App\Core\Request;
 use App\Core\Response;
 use App\Services\StudentDashboardService;
+use App\Services\StudentSessionService;
 use RuntimeException;
 
 final class StudentDashboardController
 {
-    public function __construct(private readonly StudentDashboardService $service)
-    {
+    public function __construct(
+        private readonly StudentDashboardService $service,
+        private readonly StudentSessionService $students,
+    ) {
     }
 
     /**
@@ -20,11 +23,11 @@ final class StudentDashboardController
      */
     public function show(Request $request, array $params = []): Response
     {
-        $studentKey = $this->studentKey($request);
+        $studentKey = $this->students->studentKey();
 
         if ($studentKey === null) {
-            return Response::error('Student key is required', 422, [
-                'studentKey' => ['Login as a student or provide studentKey.'],
+            return Response::error('Student session is required', 403, [
+                'session' => ['Login as a student to access this resource.'],
             ]);
         }
 
@@ -41,13 +44,5 @@ final class StudentDashboardController
             'Student dashboard loaded',
             ['source' => 'json-mock-repository', 'studentKey' => $studentKey],
         );
-    }
-
-    private function studentKey(Request $request): ?string
-    {
-        $studentKey = (string) ($request->query()['studentKey'] ?? $request->header('x-sems-student-key', ''));
-        $studentKey = trim($studentKey);
-
-        return $studentKey === '' ? null : $studentKey;
     }
 }

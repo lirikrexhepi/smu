@@ -17,6 +17,7 @@ use App\Repositories\Mock\MockStudentGradesTranscriptRepository;
 use App\Repositories\Mock\MockStudentProfileRepository;
 use App\Repositories\Mock\MockUserRepository;
 use App\Services\AuthService;
+use App\Services\SessionService;
 use App\Services\StudentAttendanceService;
 use App\Services\StudentCoursesService;
 use App\Services\StudentDashboardService;
@@ -30,13 +31,17 @@ return static function (Router $router): void {
     $router->get('/api/health', [new HealthController(), 'show']);
 
     $studentProfileRepository = new MockStudentProfileRepository();
+    $sessionService = new SessionService(__DIR__ . '/../storage/sessions');
 
     $userRepository = new MockUserRepository($studentProfileRepository);
     $authService = new AuthService($userRepository);
+    $authController = new AuthController($authService, new LoginRequestValidator(), $sessionService);
     $router->post('/api/auth/login', [
-        new AuthController($authService, new LoginRequestValidator()),
+        $authController,
         'login',
     ]);
+    $router->get('/api/auth/session', [$authController, 'session']);
+    $router->post('/api/auth/logout', [$authController, 'logout']);
 
     $studentDashboardRepository = new MockStudentDashboardRepository($studentProfileRepository);
     $studentDashboardService = new StudentDashboardService($studentDashboardRepository);

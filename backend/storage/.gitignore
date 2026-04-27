@@ -2,3 +2,5 @@
 !.gitignore
 !logs/
 !logs/.gitkeep
+!sessions/
+!sessions/.gitkeep

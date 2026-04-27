@@ -15,3 +15,8 @@ export type LoginResponse = {
   user: AuthUser
   redirectPath: string
 }
+
+export type SessionResponse = {
+  authenticated: boolean
+  user: AuthUser | null
+}

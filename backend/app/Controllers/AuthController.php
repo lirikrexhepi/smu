@@ -22,45 +22,28 @@ final class AuthController
     ) {
     }
 
-    /**
-     * @param array<string, string> $params
-     */
     public function login(Request $request, array $params = []): Response
     {
-        $errors = $this->validator->validate($request->body());
+        $body = $request->body();
+        $errors = $this->validator->validate($body);
 
         if ($errors !== []) {
             return Response::validation($errors);
         }
 
         $result = $this->authService->attemptLogin(
-            (string) $request->body()['identifier'],
-            (string) $request->body()['password'],
+            (string) ($body['identifier'] ?? ''),
+            (string) ($body['password'] ?? ''),
         );
 
         if ($result === null) {
-            return Response::error('Invalid email, ID, or password', 401, [
-                'credentials' => ['The supplied credentials do not match a demo user.'],
+            return Response::error('Invalid credentials', 401, [
+                'auth' => ['The credentials provided do not match our records.'],
             ]);
         }
 
         $this->sessions->login($result['user']);
-
-        $userId = (string) $result['user']['id'];
-
-        $token = base64_encode(
-            $userId . '|' . hash_hmac('sha256', $userId, self::COOKIE_SECRET)
-        );
-
-        setcookie(
-            self::COOKIE_NAME,
-            $token,
-            time() + (86400 * 7),
-            '/',
-            '',
-            false,
-            true
-        );
+        $this->issuePersonalizationCookie((string) $result['user']['id']);
 
         return Response::success($result, 'Login successful');
     }
@@ -84,21 +67,14 @@ final class AuthController
         ], 'Personalized user data loaded');
     }
 
-    /**
-     * @param array<string, string> $params
-     */
     public function logout(Request $request, array $params = []): Response
     {
         $this->sessions->logout();
-
-        setcookie(self::COOKIE_NAME, '', time() - 3600, '/');
+        $this->clearPersonalizationCookie();
 
         return Response::success(null, 'Logout successful');
     }
 
-    /**
-     * @param array<string, string> $params
-     */
     public function session(Request $request, array $params = []): Response
     {
         $user = $this->sessions->user();
@@ -113,6 +89,21 @@ final class AuthController
         return Response::success([
             'authenticated' => true,
             'user' => $user,
+            'role' => $user['role'] ?? 'guest',
         ], 'Session active');
+    }
+
+    private function issuePersonalizationCookie(string $userId): void
+    {
+        $token = base64_encode(
+            $userId . '|' . hash_hmac('sha256', $userId, self::COOKIE_SECRET)
+        );
+
+        setcookie(self::COOKIE_NAME, $token, time() + (86400 * 7), '/', '', false, true);
+    }
+
+    private function clearPersonalizationCookie(): void
+    {
+        setcookie(self::COOKIE_NAME, '', time() - 3600, '/');
     }
 }

@@ -12,30 +12,20 @@ final class SessionService
     {
     }
 
-    /**
-     * @param array<string, mixed> $user
-     */
+  
     public function login(array $user): void
     {
         $this->start();
+        
+        // Prevents Session Fixation attacks
         session_regenerate_id(true);
 
         $_SESSION[self::USER_KEY] = $user;
     }
 
-    public function hasUser(): bool
-    {
-        if (!$this->canReadSession()) {
-            return false;
-        }
-
-        $this->start();
-
-        return isset($_SESSION[self::USER_KEY]) && is_array($_SESSION[self::USER_KEY]);
-    }
-
     /**
-     * @return array<string, mixed>|null
+     * Kthen te dhenat e perdoruesit nga sesioni
+    
      */
     public function user(): ?array
     {
@@ -47,6 +37,26 @@ final class SessionService
         $user = $_SESSION[self::USER_KEY] ?? null;
 
         return is_array($user) ? $user : null;
+    }
+
+    /**
+     * Ndihmon qe te merr rolin e perdoruesit menjher(student,profesor).
+     */
+    public function role(): ?string
+    {
+        $user = $this->user();
+        return $user['role'] ?? null;
+    }
+
+    
+    public function hasRole(string $role): bool
+    {
+        return $this->role() === $role;
+    }
+
+    public function hasUser(): bool
+    {
+        return $this->user() !== null;
     }
 
     public function logout(): void
@@ -89,15 +99,14 @@ final class SessionService
             if (!is_dir($this->savePath)) {
                 mkdir($this->savePath, 0775, true);
             }
-
             session_save_path($this->savePath);
         }
 
         session_set_cookie_params([
-            'lifetime' => 0,
+            'lifetime' => 0, // Sesioni perfundon kur mbyllet browseri
             'path' => '/',
-            'secure' => false,
-            'httponly' => true,
+            'secure' => false, // nesee perdoret https behet "true"
+            'httponly' => true, // nuk e lejon Js te ket acces ne cookies(pra largimi nga varja e local storage sa me shume)
             'samesite' => 'Lax',
         ]);
 

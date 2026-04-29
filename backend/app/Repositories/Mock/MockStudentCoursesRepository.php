@@ -12,32 +12,31 @@ use RuntimeException;
 
 final class MockStudentCoursesRepository implements StudentCoursesRepositoryInterface
 {
-    public function listForStudent(string $studentKey): StudentCoursesOverviewData
+    public function listForStudent(string $studentKey, array $filters = []): StudentCoursesOverviewData
     {
         $studentCourses = SemsMockData::studentCourses($studentKey);
         $enrollments = $this->enrollments($studentCourses);
 
         $courses = [];
-        $upcomingDeadlines = [];
-        $totalEcts = 0;
 
         foreach ($enrollments as $enrollment) {
             $course = SemsMockData::course((string) $enrollment['courseId']);
-            $overviewCourse = $this->overviewCourse($course, $enrollment);
-
-            $courses[] = $overviewCourse;
-            $totalEcts += (int) ($overviewCourse['ects'] ?? 0);
-
-            if (is_array($overviewCourse['nextImportantEvent'] ?? null) && $this->isUpcomingDeadline($overviewCourse['nextImportantEvent'])) {
-                $upcomingDeadlines[] = $this->deadlineSummary($course, $overviewCourse['nextImportantEvent']);
-            }
+            $courses[] = $this->overviewCourse($course, $enrollment);
         }
+
+        $filteredCourses = $this->filteredCourses($courses, $filters);
+        $this->sortCourses($filteredCourses, (string) ($filters['sort'] ?? ''));
+        $upcomingDeadlines = $this->upcomingDeadlines($filteredCourses);
+        $totalEcts = array_sum(array_map(
+            static fn (array $course): int => (int) ($course['ects'] ?? 0),
+            $filteredCourses,
+        ));
 
         return new StudentCoursesOverviewData([
             'semester' => (string) ($studentCourses['semester'] ?? ''),
             'academicYear' => (string) ($studentCourses['academicYear'] ?? ''),
             'summary' => [
-                'enrolledCourses' => count($courses),
+                'enrolledCourses' => count($filteredCourses),
                 'totalEcts' => $totalEcts,
                 'ectsTarget' => (int) ($studentCourses['ectsTarget'] ?? $totalEcts),
                 'upcomingDeadlines' => count($upcomingDeadlines),
@@ -46,7 +45,7 @@ final class MockStudentCoursesRepository implements StudentCoursesRepositoryInte
                 'semesters' => $this->semesterOptions($studentCourses, $courses),
                 'statuses' => $this->statusOptions($courses),
             ],
-            'courses' => $courses,
+            'courses' => $filteredCourses,
             'upcomingDeadlines' => array_slice($upcomingDeadlines, 0, 6),
         ]);
     }
@@ -241,6 +240,76 @@ final class MockStudentCoursesRepository implements StudentCoursesRepositoryInte
         }
 
         return (int) $matches[1] <= 14;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $courses
+     * @param array{search?: string|null, semester?: string|null, status?: string|null, sort?: string|null} $filters
+     * @return list<array<string, mixed>>
+     */
+    private function filteredCourses(array $courses, array $filters): array
+    {
+        $search = strtolower(trim((string) ($filters['search'] ?? '')));
+        $semester = strtolower(trim((string) ($filters['semester'] ?? '')));
+        $status = strtolower(trim((string) ($filters['status'] ?? '')));
+
+        return array_values(array_filter(
+            $courses,
+            static function (array $course) use ($search, $semester, $status): bool {
+                $matchesSearch = $search === ''
+                    || str_contains(strtolower((string) ($course['name'] ?? '')), $search)
+                    || str_contains(strtolower((string) ($course['code'] ?? '')), $search)
+                    || str_contains(strtolower((string) ($course['professor'] ?? '')), $search);
+
+                $matchesSemester = $semester === ''
+                    || strtolower((string) ($course['semester'] ?? '')) === $semester;
+
+                $matchesStatus = $status === ''
+                    || strtolower((string) ($course['enrollmentStatus'] ?? '')) === $status;
+
+                return $matchesSearch && $matchesSemester && $matchesStatus;
+            },
+        ));
+    }
+
+    /**
+     * @param list<array<string, mixed>> $courses
+     */
+    private function sortCourses(array &$courses, string $sort): void
+    {
+        usort($courses, static function (array $left, array $right) use ($sort): int {
+            return match ($sort) {
+                'name-asc' => strcasecmp((string) ($left['name'] ?? ''), (string) ($right['name'] ?? '')),
+                'grade-desc' => (float) ($right['currentGradePoints'] ?? 0) <=> (float) ($left['currentGradePoints'] ?? 0),
+                'attendance-desc' => (int) ($right['attendancePercentage'] ?? 0) <=> (int) ($left['attendancePercentage'] ?? 0),
+                'ects-desc' => (int) ($right['ects'] ?? 0) <=> (int) ($left['ects'] ?? 0),
+                default => 0,
+            };
+        });
+    }
+
+    /**
+     * @param list<array<string, mixed>> $courses
+     * @return list<array<string, mixed>>
+     */
+    private function upcomingDeadlines(array $courses): array
+    {
+        $deadlines = [];
+
+        foreach ($courses as $course) {
+            if (!is_array($course['nextImportantEvent'] ?? null) || !$this->isUpcomingDeadline($course['nextImportantEvent'])) {
+                continue;
+            }
+
+            $deadlines[] = [
+                ...$course['nextImportantEvent'],
+                'courseId' => (string) ($course['courseId'] ?? ''),
+                'courseCode' => (string) ($course['code'] ?? ''),
+                'courseName' => (string) ($course['name'] ?? ''),
+            ];
+        }
+
+        return $deadlines;
     }
 
     /**

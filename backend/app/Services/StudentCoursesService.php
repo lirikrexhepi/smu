@@ -14,9 +14,12 @@ final class StudentCoursesService
     {
     }
 
-    public function overview(string $studentKey): StudentCoursesOverviewData
+    /**
+     * @param array{search?: string|null, semester?: string|null, status?: string|null, sort?: string|null} $filters
+     */
+    public function overview(string $studentKey, array $filters = []): StudentCoursesOverviewData
     {
-        return $this->repository->listForStudent($studentKey);
+        return $this->repository->listForStudent($studentKey, $filters);
     }
 
     public function detail(string $studentKey, string $courseId): StudentCourseDetailData

@@ -13,8 +13,30 @@ export function getStudentDashboard() {
   return apiGet<StudentDashboardSummary>('/api/student/dashboard')
 }
 
-export function getStudentCourses() {
-  return apiGet<StudentCoursesOverview>('/api/student/courses')
+export function getStudentCourses(
+  filters: { search?: string; semester?: string; status?: string; sort?: string } = {},
+) {
+  const params = new URLSearchParams()
+
+  if (filters.search?.trim()) {
+    params.set('search', filters.search.trim())
+  }
+
+  if (filters.semester && filters.semester !== 'all') {
+    params.set('semester', filters.semester)
+  }
+
+  if (filters.status && filters.status !== 'all') {
+    params.set('status', filters.status)
+  }
+
+  if (filters.sort && filters.sort !== 'default') {
+    params.set('sort', filters.sort)
+  }
+
+  const query = params.toString()
+
+  return apiGet<StudentCoursesOverview>(`/api/student/courses${query ? `?${query}` : ''}`)
 }
 
 export function getStudentCourseDetail(courseId: string) {

@@ -9,7 +9,10 @@ use App\DTO\StudentCoursesOverviewData;
 
 interface StudentCoursesRepositoryInterface
 {
-    public function listForStudent(string $studentKey): StudentCoursesOverviewData;
+    /**
+     * @param array{search?: string|null, semester?: string|null, status?: string|null, sort?: string|null} $filters
+     */
+    public function listForStudent(string $studentKey, array $filters = []): StudentCoursesOverviewData;
 
     public function findForStudent(string $studentKey, string $courseId): StudentCourseDetailData;
 }

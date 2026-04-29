@@ -32,7 +32,12 @@ final class StudentCoursesController
         }
 
         try {
-            $courses = $this->service->overview($studentKey)->toArray();
+            $courses = $this->service->overview($studentKey, [
+                'search' => $this->queryValue($request, 'search'),
+                'semester' => $this->queryValue($request, 'semester'),
+                'status' => $this->queryValue($request, 'status'),
+                'sort' => $this->queryValue($request, 'sort'),
+            ])->toArray();
         } catch (RuntimeException $exception) {
             return Response::error('Student course data not found', 404, [
                 'studentKey' => [$exception->getMessage()],
@@ -79,5 +84,16 @@ final class StudentCoursesController
             'Student course loaded',
             ['source' => 'json-mock-repository', 'studentKey' => $studentKey, 'courseId' => $courseId],
         );
+    }
+
+    private function queryValue(Request $request, string $key): ?string
+    {
+        $value = trim((string) ($request->query()[$key] ?? ''));
+
+        if ($value === '' || strtolower($value) === 'all') {
+            return null;
+        }
+
+        return $value;
     }
 }

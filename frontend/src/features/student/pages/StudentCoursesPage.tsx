@@ -1,6 +1,6 @@
 import type { LucideIcon } from 'lucide-react'
 import { ArrowRight, BookOpen, CalendarDays, Clock3, GraduationCap, Search, UserRound } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { PageHeader } from '@/components/shared/PageHeader'
@@ -20,25 +20,31 @@ import type {
 } from '@/types/student'
 
 type StatusFilter = StudentCourseStatus | 'all'
+type SortFilter = 'default' | 'name-asc' | 'grade-desc' | 'attendance-desc' | 'ects-desc'
 
 export function StudentCoursesPage() {
   const [overview, setOverview] = useState<StudentCoursesOverview | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [semesterFilter, setSemesterFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
+  const [sortFilter, setSortFilter] = useState<SortFilter>('default')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   useEffect(() => {
     let isMounted = true
 
-    getStudentCourses()
+    getStudentCourses({
+      search: searchQuery,
+      semester: semesterFilter,
+      status: statusFilter,
+      sort: sortFilter,
+    })
       .then((response) => {
         if (!isMounted) {
           return
         }
 
         setOverview(response.data)
-        setSemesterFilter(response.data.filters.semesters[0] ?? 'all')
         setErrorMessage(null)
       })
       .catch((error: unknown) => {
@@ -52,27 +58,7 @@ export function StudentCoursesPage() {
     return () => {
       isMounted = false
     }
-  }, [])
-
-  const filteredCourses = useMemo(() => {
-    if (!overview) {
-      return []
-    }
-
-    const query = searchQuery.trim().toLowerCase()
-
-    return overview.courses.filter((course) => {
-      const matchesSearch =
-        query === '' ||
-        course.name.toLowerCase().includes(query) ||
-        course.code.toLowerCase().includes(query) ||
-        course.professor.toLowerCase().includes(query)
-      const matchesSemester = semesterFilter === 'all' || course.semester === semesterFilter
-      const matchesStatus = statusFilter === 'all' || course.enrollmentStatus === statusFilter
-
-      return matchesSearch && matchesSemester && matchesStatus
-    })
-  }, [overview, searchQuery, semesterFilter, statusFilter])
+  }, [searchQuery, semesterFilter, statusFilter, sortFilter])
 
   if (!overview) {
     return (
@@ -135,7 +121,7 @@ export function StudentCoursesPage() {
         </div>
       ) : null}
 
-      <div className="mb-6 grid gap-3 lg:grid-cols-[minmax(260px,420px)_260px_180px]">
+      <div className="mb-6 grid gap-3 lg:grid-cols-[minmax(260px,420px)_220px_170px_210px]">
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <Input
@@ -162,8 +148,8 @@ export function StudentCoursesPage() {
         <select
           aria-label="Filter by status"
           className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
-          value={statusFilter}
-          onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
         >
           <option value="all">All Status</option>
           {overview.filters.statuses.map((status) => (
@@ -171,6 +157,18 @@ export function StudentCoursesPage() {
               {status.label}
             </option>
           ))}
+        </select>
+        <select
+          aria-label="Sort courses"
+          className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+          value={sortFilter}
+          onChange={(event) => setSortFilter(event.target.value as SortFilter)}
+        >
+          <option value="default">Default Order</option>
+          <option value="name-asc">Course Name A-Z</option>
+          <option value="grade-desc">Highest Grade</option>
+          <option value="attendance-desc">Highest Attendance</option>
+          <option value="ects-desc">Most ECTS</option>
         </select>
       </div>
 
@@ -182,9 +180,9 @@ export function StudentCoursesPage() {
             ))}
           </div>
 
-          {filteredCourses.length > 0 ? (
+          {overview.courses.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
-              {filteredCourses.map((course) => (
+              {overview.courses.map((course) => (
                 <CourseCard key={course.courseId} course={course} />
               ))}
             </div>

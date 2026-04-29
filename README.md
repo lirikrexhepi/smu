@@ -1,3 +1,11 @@
+## Video e Prezantimit
+
+Ne kete link gjendet video e prezantimit te projektit. Video eshte hostuar ne Streamable pasi qe madhesia e videos ka qene shume e madhe per ta derguar si attachment:
+
+```text
+https://streamable.com/xgiw2i
+```
+
 # SEMS - Student Education Management System
 
 Phase I university project built without a database. Data is simulated through static mock files and PHP arrays.
@@ -59,14 +67,6 @@ Professor:
 ```text
 ID: P2001
 Password: Teacher@123
-```
-
-## Video e Prezantimit
-
-Ne kete link gjendet video e prezantimit te projektit. Video eshte hostuar ne Streamable pasi qe madhesia e videos ka qene shume e madhe per ta derguar si attachment:
-
-```text
-https://streamable.com/xgiw2i
 ```
 
 ## Phase I Coverage

@@ -11,6 +11,7 @@ import { ProfessorAttendancePage } from '@/features/professor/pages/ProfessorAtt
 import { ProfessorCoursesPage } from '@/features/professor/pages/ProfessorCoursesPage'
 import { ProfessorDashboardPage } from '@/features/professor/pages/ProfessorDashboardPage'
 import { ProfessorGradebookPage } from '@/features/professor/pages/ProfessorGradebookPage'
+import { LandingPage } from '@/features/public/pages/LandingPage'
 import { StudentAttendancePage } from '@/features/student/pages/StudentAttendancePage'
 import { StudentCommunicationPage } from '@/features/student/pages/StudentCommunicationPage'
 import { StudentCourseDetailPage } from '@/features/student/pages/StudentCourseDetailPage'
@@ -23,7 +24,7 @@ import { StudentProfilePage } from '@/features/student/pages/StudentProfilePage'
 export const router = createBrowserRouter([
   {
     path: '/',
-    element: <Navigate to="/login" replace />,
+    element: <LandingPage />,
   },
   {
     element: <AuthLayout />,

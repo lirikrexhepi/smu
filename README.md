@@ -2,6 +2,10 @@
 
 SEMS is a demo Student Education Management System with a React/Vite frontend and a lightweight PHP API backend. The app includes role-based portal shells for students, professors, and admins, with mock data for dashboards, courses, attendance, grades, transcripts, profiles, and authentication.
 
+## Demo Video
+
+Project demo: https://streamable.com/xgiw2i
+
 ## Tech Stack
 
 - Frontend: React 19, TypeScript, Vite, React Router, Tailwind CSS

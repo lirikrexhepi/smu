@@ -1,11 +1,9 @@
 import {
   BookOpen,
   CalendarCheck,
-  CircleHelp,
   ClipboardCheck,
   GraduationCap,
   LayoutDashboard,
-  MessageSquare,
   Shield,
   UserRound,
   Users,
@@ -24,8 +22,6 @@ export const studentNavItems: NavItem[] = [
   { label: 'Attendance', to: '/student/attendance', icon: CalendarCheck },
   { label: 'Grades & Transcript', to: '/student/grades', icon: ClipboardCheck },
   { label: 'Profile', to: '/student/profile', icon: UserRound },
-  { label: 'Communication', to: '/student/communication', icon: MessageSquare },
-  { label: 'Help', to: '/student/help', icon: CircleHelp },
 ]
 
 export const professorNavItems: NavItem[] = [

@@ -13,12 +13,10 @@ import { ProfessorDashboardPage } from '@/features/professor/pages/ProfessorDash
 import { ProfessorGradebookPage } from '@/features/professor/pages/ProfessorGradebookPage'
 import { LandingPage } from '@/features/public/pages/LandingPage'
 import { StudentAttendancePage } from '@/features/student/pages/StudentAttendancePage'
-import { StudentCommunicationPage } from '@/features/student/pages/StudentCommunicationPage'
 import { StudentCourseDetailPage } from '@/features/student/pages/StudentCourseDetailPage'
 import { StudentCoursesPage } from '@/features/student/pages/StudentCoursesPage'
 import { StudentDashboardPage } from '@/features/student/pages/StudentDashboardPage'
 import { StudentGradesPage } from '@/features/student/pages/StudentGradesPage'
-import { StudentHelpPage } from '@/features/student/pages/StudentHelpPage'
 import { StudentProfilePage } from '@/features/student/pages/StudentProfilePage'
 
 export const router = createBrowserRouter([
@@ -70,14 +68,6 @@ export const router = createBrowserRouter([
       {
         path: 'profile',
         element: <StudentProfilePage />,
-      },
-      {
-        path: 'communication',
-        element: <StudentCommunicationPage />,
-      },
-      {
-        path: 'help',
-        element: <StudentHelpPage />,
       },
     ],
   },

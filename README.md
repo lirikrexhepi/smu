@@ -1,4 +1,4 @@
-# SEMS
+# SEMS - Student Education Management System
 
 SEMS is a demo Student Education Management System with a React/Vite frontend and a lightweight PHP API backend. The app includes role-based portal shells for students, professors, and admins, with mock data for dashboards, courses, attendance, grades, transcripts, profiles, and authentication.
 
@@ -11,15 +11,15 @@ Project demo: https://streamable.com/xgiw2i
 - Frontend: React 19, TypeScript, Vite, React Router, Tailwind CSS
 - Backend: PHP 8.1+, custom router, middleware pipeline, PSR-4 autoloading
 - Data: JSON mock data under `backend/app/Data/MockData`
-- Auth: mock login with file-backed session state
+- Auth: mock login with PHP session state and a signed `user_token` personalization cookie
 
 ## Project Structure
 
 ```text
 backend/
   app/                 PHP controllers, services, repositories, DTOs, validators, middleware
-  config/              Application, CORS, and database config
-  public/              PHP public entry point and uploaded assets
+  config/              Application and CORS config
+  public/              PHP public entry point, demo pages, and uploaded assets
   routes/api.php       API route registration
   storage/             Runtime storage for logs and sessions
 
@@ -31,7 +31,7 @@ frontend/
   src/types/           Shared TypeScript types
 ```
 
-## Prerequisites
+## Requirements
 
 - PHP 8.1 or newer
 - Composer
@@ -75,14 +75,21 @@ The frontend runs at the Vite dev server URL, usually `http://127.0.0.1:5173`. V
 
 ## Demo Accounts
 
-All mock accounts use the password `1234`.
+Student:
 
-| Role | Identifier examples |
-| --- | --- |
-| Student | `luri`, `S1002`, `S1003`, `S1004`, `S1005` |
-| Professor | `P2001`, `P2002` |
+```text
+ID: luri
+Password: Student@123
+```
 
-The login form accepts an institution ID or email where the mock user includes one.
+Professor:
+
+```text
+ID: P2001
+Password: Teacher@123
+```
+
+Additional identifiers are available in `backend/app/Data/MockData/users.json`. The login form accepts an institution ID or email where the mock user includes one.
 
 ## API Overview
 
@@ -98,6 +105,27 @@ The login form accepts an institution ID or email where the mock user includes o
 - `GET /api/student/profile`
 - `PATCH /api/student/profile`
 - `POST /api/student/profile/avatar`
+
+## PHP Requirement Demo Pages
+
+```text
+http://127.0.0.1:8080/php-demo/index.php
+http://127.0.0.1:8080/php-demo/arrays.php
+http://127.0.0.1:8080/php-demo/sorting.php
+http://127.0.0.1:8080/php-demo/inheritance.php
+```
+
+## Phase I Coverage
+
+- No database is used.
+- Login/logout uses static mock credentials from `backend/app/Data/MockData/users.json`.
+- Session state is stored through PHP sessions.
+- Cookies are used for a signed `user_token` personalization cookie.
+- Student and professor roles are protected separately by role middleware.
+- PHP includes are demonstrated in `backend/public/php-demo/includes`.
+- PHP arrays, loops, functions, and sorting are demonstrated in `backend/public/php-demo`.
+- OOP, constructors, getters/setters, encapsulation, and inheritance are demonstrated with `Person`, `Student`, and `HonorStudent`.
+- Server-side validation uses RegEx for identifiers and phone numbers.
 
 ## Build
 

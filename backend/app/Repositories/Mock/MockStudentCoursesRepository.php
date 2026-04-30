@@ -27,6 +27,8 @@ final class MockStudentCoursesRepository implements StudentCoursesRepositoryInte
         $filteredCourses = $this->filteredCourses($courses, $filters);
         $this->sortCourses($filteredCourses, (string) ($filters['sort'] ?? ''));
         $upcomingDeadlines = $this->upcomingDeadlines($filteredCourses);
+        $statusCounts = $this->statusCounts($filteredCourses);
+        $gradeStats = $this->gradeStats($filteredCourses);
         $totalEcts = array_sum(array_map(
             static fn (array $course): int => (int) ($course['ects'] ?? 0),
             $filteredCourses,
@@ -40,6 +42,8 @@ final class MockStudentCoursesRepository implements StudentCoursesRepositoryInte
                 'totalEcts' => $totalEcts,
                 'ectsTarget' => (int) ($studentCourses['ectsTarget'] ?? $totalEcts),
                 'upcomingDeadlines' => count($upcomingDeadlines),
+                'statusCounts' => $statusCounts,
+                'gradeStats' => $gradeStats,
             ],
             'filters' => [
                 'semesters' => $this->semesterOptions($studentCourses, $courses),
@@ -48,6 +52,62 @@ final class MockStudentCoursesRepository implements StudentCoursesRepositoryInte
             'courses' => $filteredCourses,
             'upcomingDeadlines' => array_slice($upcomingDeadlines, 0, 6),
         ]);
+    }
+
+    /**
+     * @param list<array<string, mixed>> $courses
+     * @return array{active: int, registered: int, upcoming: int}
+     */
+    private function statusCounts(array $courses): array
+    {
+        $counts = [
+            'active' => 0,
+            'registered' => 0,
+            'upcoming' => 0,
+        ];
+
+        foreach ($courses as $course) {
+            $status = (string) ($course['enrollmentStatus'] ?? '');
+
+            if (array_key_exists($status, $counts)) {
+                $counts[$status]++;
+            }
+        }
+
+        return $counts;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $courses
+     * @return array{average: float, min: float, max: float}
+     */
+    private function gradeStats(array $courses): array
+    {
+        $gradeValues = [];
+
+        foreach ($courses as $course) {
+            $grade = (float) ($course['currentGradePoints'] ?? 0);
+
+            if ($grade > 0) {
+                $gradeValues[] = $grade;
+            }
+        }
+
+        if ($gradeValues === []) {
+            return [
+                'average' => 0.0,
+                'min' => 0.0,
+                'max' => 0.0,
+            ];
+        }
+
+        sort($gradeValues);
+
+        return [
+            'average' => round(array_sum($gradeValues) / count($gradeValues), 2),
+            'min' => (float) $gradeValues[0],
+            'max' => (float) $gradeValues[count($gradeValues) - 1],
+        ];
     }
 
     public function findForStudent(string $studentKey, string $courseId): StudentCourseDetailData
@@ -280,8 +340,11 @@ final class MockStudentCoursesRepository implements StudentCoursesRepositoryInte
         usort($courses, static function (array $left, array $right) use ($sort): int {
             return match ($sort) {
                 'name-asc' => strcasecmp((string) ($left['name'] ?? ''), (string) ($right['name'] ?? '')),
+                'name-desc' => strcasecmp((string) ($right['name'] ?? ''), (string) ($left['name'] ?? '')),
                 'grade-desc' => (float) ($right['currentGradePoints'] ?? 0) <=> (float) ($left['currentGradePoints'] ?? 0),
+                'grade-asc' => (float) ($left['currentGradePoints'] ?? 0) <=> (float) ($right['currentGradePoints'] ?? 0),
                 'attendance-desc' => (int) ($right['attendancePercentage'] ?? 0) <=> (int) ($left['attendancePercentage'] ?? 0),
+                'attendance-asc' => (int) ($left['attendancePercentage'] ?? 0) <=> (int) ($right['attendancePercentage'] ?? 0),
                 'ects-desc' => (int) ($right['ects'] ?? 0) <=> (int) ($left['ects'] ?? 0),
                 default => 0,
             };

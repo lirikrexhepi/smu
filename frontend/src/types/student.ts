@@ -160,6 +160,16 @@ export type StudentCoursesOverview = {
     totalEcts: number
     ectsTarget: number
     upcomingDeadlines: number
+    statusCounts: {
+      active: number
+      registered: number
+      upcoming: number
+    }
+    gradeStats: {
+      average: number
+      min: number
+      max: number
+    }
   }
   filters: {
     semesters: string[]

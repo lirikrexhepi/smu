@@ -20,7 +20,15 @@ import type {
 } from '@/types/student'
 
 type StatusFilter = StudentCourseStatus | 'all'
-type SortFilter = 'default' | 'name-asc' | 'grade-desc' | 'attendance-desc' | 'ects-desc'
+type SortFilter =
+  | 'default'
+  | 'name-asc'
+  | 'name-desc'
+  | 'grade-desc'
+  | 'grade-asc'
+  | 'attendance-desc'
+  | 'attendance-asc'
+  | 'ects-desc'
 
 export function StudentCoursesPage() {
   const [overview, setOverview] = useState<StudentCoursesOverview | null>(null)
@@ -109,6 +117,14 @@ export function StudentCoursesPage() {
       tone: 'orange',
       icon: Clock3,
     },
+    {
+      id: 'average-grade',
+      label: 'Average Grade',
+      value: String(overview.summary.gradeStats.average.toFixed(2)),
+      helper: `Min ${overview.summary.gradeStats.min.toFixed(2)} / Max ${overview.summary.gradeStats.max.toFixed(2)}`,
+      tone: 'purple',
+      icon: GraduationCap,
+    },
   ]
 
   return (
@@ -166,19 +182,42 @@ export function StudentCoursesPage() {
         >
           <option value="default">Default Order</option>
           <option value="name-asc">Course Name A-Z</option>
+          <option value="name-desc">Course Name Z-A</option>
           <option value="grade-desc">Highest Grade</option>
+          <option value="grade-asc">Lowest Grade</option>
           <option value="attendance-desc">Highest Attendance</option>
+          <option value="attendance-asc">Lowest Attendance</option>
           <option value="ects-desc">Most ECTS</option>
         </select>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
         <div>
-          <div className="mb-5 grid gap-4 md:grid-cols-3">
+          <div className="mb-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {summaryCards.map((card) => (
               <SummaryCard key={card.id} card={card} />
             ))}
           </div>
+
+          <Card className="mb-5">
+            <CardHeader>
+              <CardTitle>Enrollment Status Breakdown</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-3 text-sm sm:grid-cols-3">
+              <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+                <p className="text-slate-500">Active</p>
+                <p className="text-lg font-semibold text-slate-900">{overview.summary.statusCounts.active}</p>
+              </div>
+              <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+                <p className="text-slate-500">Registered</p>
+                <p className="text-lg font-semibold text-slate-900">{overview.summary.statusCounts.registered}</p>
+              </div>
+              <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+                <p className="text-slate-500">Upcoming</p>
+                <p className="text-lg font-semibold text-slate-900">{overview.summary.statusCounts.upcoming}</p>
+              </div>
+            </CardContent>
+          </Card>
 
           {overview.courses.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">

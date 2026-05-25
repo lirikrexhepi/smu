@@ -1,59 +1,20 @@
 <?php
 
-declare(strict_types=1);
+use Illuminate\Foundation\Application;
+use Illuminate\Http\Request;
 
-use App\Core\Config;
-use App\Core\MiddlewarePipeline;
-use App\Core\Request;
-use App\Core\Response;
-use App\Core\Router;
-use App\Middleware\AuthSessionMiddleware;
-use App\Middleware\CorsMiddleware;
-use App\Middleware\RoleGuardMiddleware;
-use App\Services\SessionService;
+define('LARAVEL_START', microtime(true));
 
-ini_set('max_execution_time', '0');
-set_time_limit(0);
-
-if (PHP_SAPI === 'cli-server') {
-    $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
-    $file = __DIR__ . $path;
-
-    if (is_file($file)) {
-        return false;
-    }
+// Determine if the application is in maintenance mode...
+if (file_exists($maintenance = __DIR__.'/../storage/framework/maintenance.php')) {
+    require $maintenance;
 }
 
-require __DIR__ . '/../vendor/autoload.php';
+// Register the Composer autoloader...
+require __DIR__.'/../vendor/autoload.php';
 
-$config = Config::fromDirectory(__DIR__ . '/../config');
-$router = new Router();
-$sessionService = new SessionService(__DIR__ . '/../storage/sessions');
+// Bootstrap Laravel and handle the request...
+/** @var Application $app */
+$app = require_once __DIR__.'/../bootstrap/app.php';
 
-(require __DIR__ . '/../routes/api.php')($router);
-
-$pipeline = new MiddlewarePipeline([
-    new CorsMiddleware($config->get('cors', [])),
-    new AuthSessionMiddleware($sessionService, [
-        '/api/student',
-        '/api/professor',
-        '/api/admin',
-    ]),
-    new RoleGuardMiddleware($sessionService, [
-        '/api/student' => ['student'],
-        '/api/professor' => ['professor'],
-        '/api/admin' => ['admin'],
-    ]),
-]);
-
-try {
-    $request = Request::fromGlobals();
-    $response = $pipeline->handle(
-        $request,
-        static fn (Request $request): Response => $router->dispatch($request),
-    );
-} catch (Throwable) {
-    $response = Response::error('Internal server error', 500);
-}
-
-$response->send();
+$app->handleRequest(Request::capture());

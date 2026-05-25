@@ -1,0 +1,16 @@
+{
+  "name": "sems/backend",
+  "description": "SEMS demo API backend",
+  "type": "project",
+  "require": {
+    "php": ">=8.1"
+  },
+  "autoload": {
+    "psr-4": {
+      "App\\": "app/"
+    }
+  },
+  "scripts": {
+    "serve": "php -S 127.0.0.1:8080 -t public public/index.php"
+  }
+}

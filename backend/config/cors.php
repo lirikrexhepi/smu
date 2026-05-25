@@ -1,9 +1,22 @@
 <?php
 
-declare(strict_types=1);
-
 return [
-    'allowed_origins' => ['http://localhost:5173', 'http://127.0.0.1:5173'],
-    'allowed_methods' => ['GET', 'POST', 'PATCH', 'OPTIONS'],
-    'allowed_headers' => ['Content-Type', 'Authorization', 'Accept'],
+    'paths' => ['api/*', 'uploads/*', 'sanctum/csrf-cookie'],
+
+    'allowed_methods' => ['*'],
+
+    'allowed_origins' => [
+        'http://localhost:5173',
+        'http://127.0.0.1:5173',
+    ],
+
+    'allowed_origins_patterns' => [],
+
+    'allowed_headers' => ['*'],
+
+    'exposed_headers' => [],
+
+    'max_age' => 0,
+
+    'supports_credentials' => true,
 ];

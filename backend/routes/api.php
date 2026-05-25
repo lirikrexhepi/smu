@@ -1,88 +1,25 @@
 <?php
 
-declare(strict_types=1);
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\HealthController;
+use App\Http\Controllers\StudentAttendanceController;
+use App\Http\Controllers\StudentCoursesController;
+use App\Http\Controllers\StudentDashboardController;
+use App\Http\Controllers\StudentGradesTranscriptController;
+use App\Http\Controllers\StudentProfileController;
+use Illuminate\Support\Facades\Route;
 
-use App\Controllers\AuthController;
-use App\Controllers\HealthController;
-use App\Controllers\StudentAttendanceController;
-use App\Controllers\StudentCoursesController;
-use App\Controllers\StudentDashboardController;
-use App\Controllers\StudentGradesTranscriptController;
-use App\Controllers\StudentProfileController;
-use App\Core\Router;
-use App\Repositories\Mock\MockStudentAttendanceRepository;
-use App\Repositories\Mock\MockStudentCoursesRepository;
-use App\Repositories\Mock\MockStudentDashboardRepository;
-use App\Repositories\Mock\MockStudentGradesTranscriptRepository;
-use App\Repositories\Mock\MockStudentProfileRepository;
-use App\Repositories\Mock\MockUserRepository;
-use App\Services\AuthService;
-use App\Services\SessionService;
-use App\Services\StudentAttendanceService;
-use App\Services\StudentCoursesService;
-use App\Services\StudentDashboardService;
-use App\Services\StudentGradesTranscriptService;
-use App\Services\StudentProfileService;
-use App\Services\StudentSessionService;
-use App\Validators\LoginRequestValidator;
-use App\Validators\StudentProfileAvatarValidator;
-use App\Validators\StudentProfileUpdateValidator;
+Route::get('/health', [HealthController::class, 'show']);
 
-return static function (Router $router): void {
-    $router->get('/api/health', [new HealthController(), 'show']);
+Route::post('/auth/login', [AuthController::class, 'login']);
+Route::get('/auth/session', [AuthController::class, 'session']);
+Route::post('/auth/logout', [AuthController::class, 'logout']);
 
-    $studentProfileRepository = new MockStudentProfileRepository();
-    $sessionService = new SessionService(__DIR__ . '/../storage/sessions');
-    $studentSessionService = new StudentSessionService($sessionService);
-
-    $userRepository = new MockUserRepository($studentProfileRepository);
-    $authService = new AuthService($userRepository);
-    $authController = new AuthController($authService, new LoginRequestValidator(), $sessionService);
-
-    $router->post('/api/auth/login', [$authController, 'login']);
-    $router->get('/api/auth/me', [$authController, 'me']);
-    $router->get('/api/auth/session', [$authController, 'session']);
-    $router->post('/api/auth/logout', [$authController, 'logout']);
-
-    $studentDashboardRepository = new MockStudentDashboardRepository($studentProfileRepository);
-    $studentDashboardService = new StudentDashboardService($studentDashboardRepository);
-
-    $studentDashboardController = new StudentDashboardController($studentDashboardService, $studentSessionService);
-
-    $router->get('/api/student/dashboard', [$studentDashboardController, 'show']);
-
-    $studentCoursesRepository = new MockStudentCoursesRepository();
-    $studentCoursesController = new StudentCoursesController(
-        new StudentCoursesService($studentCoursesRepository),
-        $studentSessionService,
-    );
-
-    $router->get('/api/student/courses', [$studentCoursesController, 'index']);
-    $router->get('/api/student/courses/{courseId}', [$studentCoursesController, 'show']);
-
-    $studentAttendanceController = new StudentAttendanceController(
-        new StudentAttendanceService(new MockStudentAttendanceRepository()),
-        $studentSessionService,
-    );
-
-    $router->get('/api/student/attendance', [$studentAttendanceController, 'show']);
-
-    $studentGradesTranscriptController = new StudentGradesTranscriptController(
-        new StudentGradesTranscriptService(new MockStudentGradesTranscriptRepository()),
-        $studentSessionService,
-    );
-
-    $router->get('/api/student/grades-transcript', [$studentGradesTranscriptController, 'show']);
-
-    $studentProfileService = new StudentProfileService($studentProfileRepository);
-    $studentProfileController = new StudentProfileController(
-        $studentProfileService,
-        new StudentProfileUpdateValidator(),
-        new StudentProfileAvatarValidator(),
-        $studentSessionService,
-    );
-
-    $router->get('/api/student/profile', [$studentProfileController, 'show']);
-    $router->patch('/api/student/profile', [$studentProfileController, 'update']);
-    $router->post('/api/student/profile/avatar', [$studentProfileController, 'uploadAvatar']);
-};
+Route::get('/student/dashboard', [StudentDashboardController::class, 'show']);
+Route::get('/student/courses', [StudentCoursesController::class, 'index']);
+Route::get('/student/courses/{courseId}', [StudentCoursesController::class, 'show']);
+Route::get('/student/attendance', [StudentAttendanceController::class, 'show']);
+Route::get('/student/grades-transcript', [StudentGradesTranscriptController::class, 'show']);
+Route::get('/student/profile', [StudentProfileController::class, 'show']);
+Route::patch('/student/profile', [StudentProfileController::class, 'update']);
+Route::post('/student/profile/avatar', [StudentProfileController::class, 'uploadAvatar']);

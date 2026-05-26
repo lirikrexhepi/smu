@@ -1,13 +1,16 @@
 <?php
 
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\HealthController;
-use App\Http\Controllers\ProfessorAttendanceController;
-use App\Http\Controllers\StudentAttendanceController;
-use App\Http\Controllers\StudentCoursesController;
-use App\Http\Controllers\StudentDashboardController;
-use App\Http\Controllers\StudentGradesTranscriptController;
-use App\Http\Controllers\StudentProfileController;
+use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Auth\HealthController;
+use App\Http\Controllers\Dashboard\StudentDashboardController;
+use App\Http\Controllers\Academic\StudentCoursesController;
+use App\Http\Controllers\Attendance\StudentAttendanceController;
+use App\Http\Controllers\Gradebook\StudentGradesTranscriptController;
+use App\Http\Controllers\Profile\StudentProfileController;
+use App\Http\Controllers\Dashboard\ProfessorDashboardController;
+use App\Http\Controllers\Academic\ProfessorCoursesController;
+use App\Http\Controllers\Attendance\ProfessorAttendanceController;
+use App\Http\Controllers\Gradebook\ProfessorGradebookController;
 use App\Http\Responses\ApiResponse;
 use Illuminate\Support\Facades\Route;
 
@@ -30,12 +33,17 @@ Route::middleware(['jwt.auth', 'role:student'])->prefix('student')->group(functi
 });
 
 Route::middleware(['jwt.auth', 'role:professor'])->prefix('professor')->group(function (): void {
-    Route::get('/dashboard', fn () => ApiResponse::success((object) []));
+    Route::get('/dashboard', [ProfessorDashboardController::class, 'show']);
+    Route::get('/courses', [ProfessorCoursesController::class, 'index']);
     Route::get('/attendance', [ProfessorAttendanceController::class, 'index']);
     Route::get('/attendance/available-classes', [ProfessorAttendanceController::class, 'availableClasses']);
     Route::post('/attendance/sessions', [ProfessorAttendanceController::class, 'storeSession']);
+    Route::post('/attendance/session', [ProfessorAttendanceController::class, 'storeSession']);
     Route::get('/attendance/sessions/{sessionId}', [ProfessorAttendanceController::class, 'showSession']);
     Route::patch('/attendance/sessions/{sessionId}/close', [ProfessorAttendanceController::class, 'closeSession']);
+    Route::post('/attendance/session/{sessionId}/record', [ProfessorAttendanceController::class, 'recordSession']);
+    Route::get('/gradebook', [ProfessorGradebookController::class, 'index']);
+    Route::post('/gradebook/grade', [ProfessorGradebookController::class, 'storeGrade']);
 });
 
 Route::middleware(['jwt.auth', 'role:admin'])->prefix('admin')->group(function (): void {

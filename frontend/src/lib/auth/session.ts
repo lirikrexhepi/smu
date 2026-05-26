@@ -1,7 +1,12 @@
 import type { AuthUser } from '@/types/auth'
 
 const AUTH_USER_KEY = 'sems.auth.user'
+const AUTH_TOKEN_KEY = 'sems.auth.token'
 export const AUTH_USER_CHANGED_EVENT = 'sems.auth.user.changed'
+
+export function storeAuthToken(token: string) {
+  window.localStorage.setItem(AUTH_TOKEN_KEY, token)
+}
 
 export function storeAuthUser(user: AuthUser) {
   window.localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user))
@@ -9,8 +14,13 @@ export function storeAuthUser(user: AuthUser) {
 }
 
 export function clearAuthUser() {
+  window.localStorage.removeItem(AUTH_TOKEN_KEY)
   window.localStorage.removeItem(AUTH_USER_KEY)
   window.dispatchEvent(new CustomEvent(AUTH_USER_CHANGED_EVENT))
+}
+
+export function getStoredAuthToken(): string | null {
+  return window.localStorage.getItem(AUTH_TOKEN_KEY)
 }
 
 export function getStoredAuthUser(): AuthUser | null {

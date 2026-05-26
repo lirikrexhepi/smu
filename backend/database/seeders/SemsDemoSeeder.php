@@ -311,6 +311,7 @@ class SemsDemoSeeder extends Seeder
                 'credits' => ['label' => 'ECTS', 'value' => (string) $row['ects'], 'sort' => 1],
                 'semester' => ['label' => 'Semester', 'value' => $row['semester_code'] === 'sem-3' ? '3rd Semester' : '4th Semester', 'sort' => 2],
                 'room' => ['label' => 'Room', 'value' => $row['room'], 'sort' => 3],
+                'assessment' => ['label' => 'Assessment', 'value' => 'Midterm 30%, assignments 30%, final exam 40%', 'sort' => 4],
             ] as $key => $item) {
                 $this->updateOrCreateId('course_info_items', [
                     'course_id' => $courseId,
@@ -319,6 +320,24 @@ class SemsDemoSeeder extends Seeder
                     'label' => $item['label'],
                     'value' => $item['value'],
                     'sort_order' => $item['sort'],
+                    'updated_at' => now(),
+                    'created_at' => now(),
+                ]);
+            }
+
+            foreach ([
+                ['key' => 'syllabus', 'title' => $row['name'].' Syllabus', 'type' => 'PDF', 'size' => '420 KB', 'date' => $row['semester_code'] === 'sem-3' ? '2025-10-01 09:00:00' : '2026-02-17 09:00:00'],
+                ['key' => 'lecture-notes', 'title' => 'Lecture Notes Pack', 'type' => 'PDF', 'size' => '1.8 MB', 'date' => $row['semester_code'] === 'sem-3' ? '2025-11-10 09:00:00' : '2026-04-08 09:00:00'],
+            ] as $material) {
+                $this->updateOrCreateId('course_materials', [
+                    'course_id' => $courseId,
+                    'material_key' => $material['key'],
+                ], [
+                    'title' => $material['title'],
+                    'type' => $material['type'],
+                    'size_label' => $material['size'],
+                    'download_url' => '/uploads/materials/test-document.txt',
+                    'published_at' => $material['date'],
                     'updated_at' => now(),
                     'created_at' => now(),
                 ]);
@@ -338,6 +357,28 @@ class SemsDemoSeeder extends Seeder
                     'created_at' => now(),
                 ]);
             }
+
+            $assessmentDate = $row['semester_code'] === 'sem-3' ? '2025-11-20' : '2026-04-29';
+            $this->updateOrCreateId('course_events', [
+                'course_id' => $courseId,
+                'event_key' => 'midterm',
+                'category' => 'assessment',
+            ], [
+                'title' => $row['name'].' Midterm',
+                'type' => 'Midterm',
+                'event_date' => $assessmentDate,
+                'event_time' => '10:00:00',
+                'date_label' => date('M j, Y', strtotime($assessmentDate)),
+                'time_label' => '10:00',
+                'status_label' => $row['semester_code'] === 'sem-3' ? 'Completed' : 'Graded',
+                'tone' => $row['semester_code'] === 'sem-3' ? 'green' : 'purple',
+                'mode' => 'On campus',
+                'duration' => '75 minutes',
+                'room' => $row['room'],
+                'description' => 'Covers lectures, lab work, and assigned readings from the first half of the course.',
+                'updated_at' => now(),
+                'created_at' => now(),
+            ]);
 
             $eventDate = $row['semester_code'] === 'sem-3' ? '2026-01-20' : '2026-06-12';
             $this->updateOrCreateId('course_events', [
@@ -382,6 +423,23 @@ class SemsDemoSeeder extends Seeder
                 'updated_at' => now(),
                 'created_at' => now(),
             ]);
+
+            foreach ([
+                ['key' => 'welcome', 'title' => 'Course workspace opened', 'body' => 'The course workspace now includes the syllabus, weekly topics, and first set of materials.', 'date' => $row['semester_code'] === 'sem-3' ? '2025-10-01' : '2026-02-17'],
+                ['key' => 'project', 'title' => 'Project guidance published', 'body' => 'Project requirements and grading expectations are available in the materials section.', 'date' => $row['semester_code'] === 'sem-3' ? '2025-12-01' : '2026-05-20'],
+            ] as $announcement) {
+                $this->updateOrCreateId('course_announcements', [
+                    'course_id' => $courseId,
+                    'announcement_key' => $announcement['key'],
+                ], [
+                    'title' => $announcement['title'],
+                    'body' => $announcement['body'],
+                    'published_on' => $announcement['date'],
+                    'date_label' => date('M j', strtotime($announcement['date'])),
+                    'updated_at' => now(),
+                    'created_at' => now(),
+                ]);
+            }
 
             $courses[$row['key']] = $row + [
                 'id' => $courseId,

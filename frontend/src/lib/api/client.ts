@@ -95,6 +95,27 @@ export async function apiPatch<T>(path: string, body: Record<string, unknown>): 
   return parseApiResponse<T>(response, 'API request failed')
 }
 
+export async function apiPut<T>(path: string, body: Record<string, unknown>): Promise<ApiEnvelope<T>> {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: 'PUT',
+    headers: apiHeaders({
+      'Content-Type': 'application/json',
+    }),
+    body: JSON.stringify(body),
+  })
+
+  return parseApiResponse<T>(response, 'API request failed')
+}
+
+export async function apiDelete<T>(path: string): Promise<ApiEnvelope<T>> {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: 'DELETE',
+    headers: apiHeaders(),
+  })
+
+  return parseApiResponse<T>(response, 'API request failed')
+}
+
 export async function apiUpload<T>(path: string, formData: FormData): Promise<ApiEnvelope<T>> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: 'POST',

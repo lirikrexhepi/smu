@@ -33,8 +33,8 @@ export const professorNavItems: NavItem[] = [
 
 export const adminNavItems: NavItem[] = [
   { label: 'Dashboard', to: '/admin/dashboard', icon: LayoutDashboard },
-  { label: 'Users', to: '/admin/dashboard', icon: Users },
-  { label: 'System', to: '/admin/dashboard', icon: Shield },
+  { label: 'Users', to: '/admin/users', icon: Users },
+  { label: 'Courses', to: '/admin/courses', icon: BookOpen },
 ]
 
 export const roleIcons = {

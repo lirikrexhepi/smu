@@ -1,8 +1,9 @@
-import { apiGet, apiPatch, apiUpload } from '@/lib/api/client'
+import { apiGet, apiPatch, apiPost, apiUpload } from '@/lib/api/client'
 import type {
   StudentCourseDetail,
   StudentCoursesOverview,
   StudentAttendance,
+  StudentAttendanceCheckInResult,
   StudentDashboardSummary,
   StudentGradesTranscript,
   StudentProfile,
@@ -63,6 +64,10 @@ export function getStudentAttendance(
   const query = params.toString()
 
   return apiGet<StudentAttendance>(`/api/student/attendance${query ? `?${query}` : ''}`)
+}
+
+export function checkInStudentAttendance(payload: { code?: string; qrToken?: string }) {
+  return apiPost<StudentAttendanceCheckInResult>('/api/student/attendance/check-in', payload)
 }
 
 export function getStudentGradesTranscript(

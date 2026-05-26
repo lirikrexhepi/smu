@@ -122,10 +122,7 @@ export function StudentGradesPage() {
     <>
       <PageHeader title="Grades & Transcript" description="Overview of your academic performance" />
 
-      <div className="mb-4">
-        <h1 className="text-2xl font-semibold text-slate-950">Grades & Transcript</h1>
-        <p className="mt-1 text-sm text-slate-500">Overview of your academic performance</p>
-      </div>
+     
 
       {errorMessage ? (
         <div className="mb-5 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">

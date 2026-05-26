@@ -94,6 +94,8 @@ class SemsDemoSeeder extends Seeder
      */
     private function seedCourses(int $departmentId, array $semesters, array $professorIds): array
     {
+        $activeDemoSchedule = $this->activeDemoSchedule();
+
         $courseRows = [
             [
                 'key' => 'ce-3-db',
@@ -186,10 +188,10 @@ class SemsDemoSeeder extends Seeder
                 'ects' => 5,
                 'semester_code' => 'sem-4',
                 'room' => 'B-208',
-                'days_label' => 'Mon, Wed',
-                'days' => ['Monday', 'Wednesday'],
-                'starts_at' => '09:00:00',
-                'ends_at' => '10:30:00',
+                'days_label' => $activeDemoSchedule['days_label'],
+                'days' => $activeDemoSchedule['days'],
+                'starts_at' => $activeDemoSchedule['starts_at'],
+                'ends_at' => $activeDemoSchedule['ends_at'],
                 'topics' => ['HTTP', 'Laravel basics', 'REST APIs', 'Frontend integration'],
                 'outcomes' => ['Build API endpoints', 'Validate requests', 'Connect frontend views to backend data'],
             ],
@@ -439,6 +441,23 @@ class SemsDemoSeeder extends Seeder
         }
 
         return $courses;
+    }
+
+    /**
+     * @return array{days_label: string, days: array<int, string>, starts_at: string, ends_at: string}
+     */
+    private function activeDemoSchedule(): array
+    {
+        $now = now();
+        $startHour = max(0, (int) $now->format('H') - 1);
+        $endHour = min(23, (int) $now->format('H') + 1);
+
+        return [
+            'days_label' => $now->format('D'),
+            'days' => [$now->format('l')],
+            'starts_at' => sprintf('%02d:00:00', $startHour),
+            'ends_at' => sprintf('%02d:59:00', $endHour),
+        ];
     }
 
     /**

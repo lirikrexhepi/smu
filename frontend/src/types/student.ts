@@ -382,6 +382,29 @@ export type StudentAttendance = {
   history: StudentAttendanceHistoryRecord[]
 }
 
+export type StudentAttendanceCheckInResult = {
+  status: 'present' | 'late' | string
+  statusLabel: string
+  checkedInAt: string
+  course: {
+    courseId: string
+    code: string
+    name: string
+    room: string
+  }
+  session: {
+    id: string
+    startsAt: string
+    endsAt: string
+    lateAfterAt: string
+  }
+  professor: {
+    id: string
+    name: string
+    email: string
+  }
+}
+
 export type StudentGradesTranscriptSemesterOption = {
   id: string
   label: string

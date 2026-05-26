@@ -1,26 +1,32 @@
 import type { CSSProperties } from 'react'
 import type { LucideIcon } from 'lucide-react'
 import {
+  Camera,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
   Clock3,
   Info,
+  Keyboard,
+  QrCode,
   TrendingDown,
   TrendingUp,
   UserCheck,
+  X,
   XCircle,
 } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
-import { getStudentAttendance } from '@/lib/api/student'
+import { checkInStudentAttendance, getStudentAttendance } from '@/lib/api/student'
 import { cn } from '@/lib/utils'
 import type {
   StudentAttendance,
+  StudentAttendanceCheckInResult,
   StudentAttendanceHistoryRecord,
   StudentAttendanceScheduleBlock,
   StudentAttendanceScheduleDay,
@@ -40,6 +46,7 @@ export function StudentAttendancePage() {
   const [selectedSemester, setSelectedSemester] = useState('all')
   const [viewMode, setViewMode] = useState<ViewMode>('week')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [isCheckInModalOpen, setIsCheckInModalOpen] = useState(false)
 
   useEffect(() => {
     let isMounted = true
@@ -87,6 +94,16 @@ export function StudentAttendancePage() {
     return attendance.weeklySchedule
   }, [attendance, viewMode])
 
+  function refreshAttendance() {
+    return getStudentAttendance({
+      courseId: selectedCourse,
+      semester: selectedSemester,
+    }).then((response) => {
+      setAttendance(response.data)
+      setErrorMessage(null)
+    })
+  }
+
   if (!attendance) {
     return (
       <>
@@ -106,13 +123,22 @@ export function StudentAttendancePage() {
 
   return (
     <>
-
-
       {errorMessage ? (
         <div className="mb-5 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {errorMessage}
         </div>
       ) : null}
+
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-slate-950">Attendance</h1>
+          <p className="mt-1 text-sm text-slate-500">Review attendance records and check in to active class sessions.</p>
+        </div>
+        <Button type="button" onClick={() => setIsCheckInModalOpen(true)}>
+          <QrCode className="h-4 w-4" />
+          Check in
+        </Button>
+      </div>
 
       <div className="mb-4 grid gap-3 lg:grid-cols-[minmax(210px,240px)_minmax(260px,320px)_minmax(240px,270px)]">
         <select
@@ -197,7 +223,220 @@ export function StudentAttendancePage() {
       />
 
       <AttendanceHistoryTable records={attendance.history} />
+
+      <CheckInModal
+        isOpen={isCheckInModalOpen}
+        onClose={() => setIsCheckInModalOpen(false)}
+        onCheckedIn={refreshAttendance}
+      />
     </>
+  )
+}
+
+function CheckInModal({
+  isOpen,
+  onClose,
+  onCheckedIn,
+}: {
+  isOpen: boolean
+  onClose: () => void
+  onCheckedIn: () => Promise<void>
+}) {
+  const [code, setCode] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isScanning, setIsScanning] = useState(false)
+  const [message, setMessage] = useState<string | null>(null)
+  const [result, setResult] = useState<StudentAttendanceCheckInResult | null>(null)
+  const videoRef = useRef<HTMLVideoElement | null>(null)
+  const streamRef = useRef<MediaStream | null>(null)
+  const frameRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    if (!isOpen) {
+      stopScanner()
+      setCode('')
+      setMessage(null)
+      setResult(null)
+    }
+
+    return () => stopScanner()
+  }, [isOpen])
+
+  if (!isOpen) {
+    return null
+  }
+
+  function stopScanner() {
+    if (frameRef.current !== null) {
+      window.cancelAnimationFrame(frameRef.current)
+      frameRef.current = null
+    }
+
+    streamRef.current?.getTracks().forEach((track) => track.stop())
+    streamRef.current = null
+
+    if (videoRef.current) {
+      videoRef.current.srcObject = null
+    }
+
+    setIsScanning(false)
+  }
+
+  function submitCheckIn(payload: { code?: string; qrToken?: string }) {
+    setIsSubmitting(true)
+    setMessage(null)
+    setResult(null)
+
+    checkInStudentAttendance(payload)
+      .then((response) => {
+        setResult(response.data)
+        setCode('')
+        return onCheckedIn()
+      })
+      .catch((error: unknown) => {
+        setMessage(error instanceof Error ? error.message : 'Unable to check in')
+      })
+      .finally(() => {
+        setIsSubmitting(false)
+      })
+  }
+
+  function handleManualSubmit() {
+    if (!/^\d{6}$/.test(code)) {
+      setMessage('Enter a valid 6-digit code.')
+      return
+    }
+
+    submitCheckIn({ code })
+  }
+
+  function handleCodeChange(value: string) {
+    setCode(value.replace(/\D/g, '').slice(0, 6))
+  }
+
+  async function startScanner() {
+    const BarcodeDetectorConstructor = getBarcodeDetectorConstructor()
+
+    if (!BarcodeDetectorConstructor) {
+      setMessage('QR scanning is not supported in this browser. Enter the 6-digit code instead.')
+      return
+    }
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setMessage('Camera access is not available in this browser. Enter the 6-digit code instead.')
+      return
+    }
+
+    try {
+      setMessage(null)
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+      const video = videoRef.current
+
+      if (!video) {
+        stream.getTracks().forEach((track) => track.stop())
+        return
+      }
+
+      streamRef.current = stream
+      video.srcObject = stream
+      await video.play()
+      setIsScanning(true)
+
+      const detector = new BarcodeDetectorConstructor({ formats: ['qr_code'] })
+
+      const scanFrame = async () => {
+        const currentVideo = videoRef.current
+
+        if (!currentVideo || !streamRef.current) {
+          return
+        }
+
+        try {
+          const barcodes = await detector.detect(currentVideo)
+          const rawValue = barcodes[0]?.rawValue
+
+          if (rawValue) {
+            stopScanner()
+            submitCheckIn(parseScannedCheckIn(rawValue))
+            return
+          }
+        } catch {
+          // Keep the scanner alive; some browsers throw while the video is warming up.
+        }
+
+        frameRef.current = window.requestAnimationFrame(scanFrame)
+      }
+
+      frameRef.current = window.requestAnimationFrame(scanFrame)
+    } catch {
+      stopScanner()
+      setMessage('Camera permission was denied or unavailable. Enter the 6-digit code instead.')
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4 py-6">
+      <div className="w-full max-w-lg rounded-lg border border-slate-200 bg-white shadow-xl">
+        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+          <h2 className="text-base font-semibold text-slate-950">Attendance Check-in</h2>
+          <Button type="button" variant="ghost" size="icon" aria-label="Close check-in modal" onClick={onClose}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+
+        <div className="space-y-4 p-5">
+          <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-slate-800">
+                <Camera className="h-4 w-4 text-blue-600" />
+                QR scan
+              </div>
+              <Button type="button" variant="secondary" size="sm" disabled={isScanning || isSubmitting} onClick={startScanner}>
+                {isScanning ? 'Scanning...' : 'Start camera'}
+              </Button>
+            </div>
+            <video
+              ref={videoRef}
+              className={cn('mt-3 aspect-video w-full rounded-md bg-slate-900 object-cover', !isScanning && 'hidden')}
+              muted
+              playsInline
+            />
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm font-medium text-slate-800">
+              <Keyboard className="h-4 w-4 text-blue-600" />
+              Manual code
+            </div>
+            <div className="flex gap-2">
+              <Input
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={6}
+                value={code}
+                placeholder="6-digit code"
+                className="font-mono text-lg tracking-[0.24em]"
+                onChange={(event) => handleCodeChange(event.target.value)}
+              />
+              <Button type="button" disabled={code.length !== 6 || isSubmitting} onClick={handleManualSubmit}>
+                Check in
+              </Button>
+            </div>
+          </div>
+
+          {message ? <p className="text-sm text-red-600">{message}</p> : null}
+
+          {result ? (
+            <div className="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-slate-700">
+              <p className="font-semibold text-green-800">Marked {result.statusLabel.toLowerCase()}</p>
+              <p className="mt-1">
+                {result.course.name} ({result.course.code}) · Professor {result.professor.name}
+              </p>
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -620,6 +859,66 @@ function comparisonHelper(comparison: StudentAttendance['summary']['comparisonVs
   const sign = comparison.direction === 'down' ? '-' : comparison.direction === 'flat' ? '' : '+'
 
   return `${sign}${comparison.value}% ${comparison.label}`
+}
+
+type BrowserBarcodeDetector = {
+  detect: (source: HTMLVideoElement) => Promise<Array<{ rawValue: string }>>
+}
+
+type BrowserBarcodeDetectorConstructor = new (options?: { formats?: string[] }) => BrowserBarcodeDetector
+
+function getBarcodeDetectorConstructor(): BrowserBarcodeDetectorConstructor | null {
+  const detector = (window as typeof window & { BarcodeDetector?: BrowserBarcodeDetectorConstructor }).BarcodeDetector
+
+  return typeof detector === 'function' ? detector : null
+}
+
+function parseScannedCheckIn(value: string): { code?: string; qrToken?: string } {
+  const trimmed = value.trim()
+
+  if (/^\d{6}$/.test(trimmed)) {
+    return { code: trimmed }
+  }
+
+  if (trimmed.startsWith('sems-attendance:')) {
+    return { qrToken: trimmed.replace('sems-attendance:', '').trim() }
+  }
+
+  try {
+    const parsed = JSON.parse(trimmed) as { qrToken?: unknown; token?: unknown; code?: unknown }
+
+    if (typeof parsed.code === 'string' && /^\d{6}$/.test(parsed.code)) {
+      return { code: parsed.code }
+    }
+
+    if (typeof parsed.qrToken === 'string') {
+      return { qrToken: parsed.qrToken }
+    }
+
+    if (typeof parsed.token === 'string') {
+      return { qrToken: parsed.token }
+    }
+  } catch {
+    // Plain opaque tokens are valid QR payloads.
+  }
+
+  try {
+    const url = new URL(trimmed)
+    const code = url.searchParams.get('code')
+    const token = url.searchParams.get('qrToken') ?? url.searchParams.get('token')
+
+    if (code && /^\d{6}$/.test(code)) {
+      return { code }
+    }
+
+    if (token) {
+      return { qrToken: token }
+    }
+  } catch {
+    // Not a URL; treat the full value as the opaque token.
+  }
+
+  return { qrToken: trimmed }
 }
 
 const toneClasses: Record<StudentAttendanceTone, { soft: string }> = {

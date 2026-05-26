@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use Database\Seeders\SemsDemoSeeder;
+use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Tests\TestCase;
@@ -34,7 +34,7 @@ final class StudentAttendanceTest extends TestCase
 
     public function test_student_attendance_returns_database_backed_contract(): void
     {
-        $this->seed(SemsDemoSeeder::class);
+        $this->seed(DatabaseSeeder::class);
 
         $token = $this->loginToken('STU-1001');
 
@@ -81,7 +81,7 @@ final class StudentAttendanceTest extends TestCase
 
     public function test_student_attendance_filters_by_course_and_student(): void
     {
-        $this->seed(SemsDemoSeeder::class);
+        $this->seed(DatabaseSeeder::class);
 
         $firstStudentToken = $this->loginToken('STU-1001');
         $secondStudentToken = $this->loginToken('STU-1002');

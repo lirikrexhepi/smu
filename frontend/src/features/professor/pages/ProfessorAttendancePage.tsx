@@ -213,8 +213,54 @@ function ActiveAttendanceSessionView({
         </Button>
       </div>
 
-      <div className="mb-5 grid gap-4 xl:grid-cols-[340px_1fr]">
-        <Card>
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="min-w-0 space-y-5">
+          <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-4">
+            <ActiveMetric label="Remaining" value={formatRemaining(remainingSeconds)} helper="Session closes automatically" tone="blue" />
+            <ActiveMetric label="Enrolled" value={String(session.totalEnrolled)} helper="Students in course" tone="slate" />
+            <ActiveMetric label="Checked in" value={String(session.checkedInCount)} helper={`${session.pendingCount} pending`} tone="green" />
+            <ActiveMetric label="Late" value={String(session.lateCount)} helper={`${session.presentCount} present`} tone="orange" />
+          </div>
+
+          <Card>
+            <CardHeader className="flex-col gap-2 border-b border-slate-100 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <CardTitle>Enrolled Students</CardTitle>
+              <Badge variant="secondary">{session.records.length} students</Badge>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[860px] text-left text-sm">
+                  <thead className="bg-slate-50 text-xs font-semibold text-slate-600">
+                    <tr>
+                      <th className="px-4 py-3">Student</th>
+                      <th className="px-4 py-3">Student ID</th>
+                      <th className="px-4 py-3">Email</th>
+                      <th className="px-4 py-3">Status</th>
+                      <th className="px-4 py-3">Checked in</th>
+                      <th className="px-4 py-3">Method</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {session.records.map((record) => (
+                      <tr key={record.id}>
+                        <td className="px-4 py-3 font-medium text-slate-800">{record.name}</td>
+                        <td className="px-4 py-3 text-slate-600">{record.institutionId}</td>
+                        <td className="px-4 py-3 text-slate-600">{record.email}</td>
+                        <td className="px-4 py-3">
+                          <Badge variant={attendanceStatusVariant(record.status)}>{record.statusLabel}</Badge>
+                        </td>
+                        <td className="px-4 py-3 text-slate-600">{record.checkedInAt ? formatDateTime(record.checkedInAt) : '-'}</td>
+                        <td className="px-4 py-3 text-slate-600">{record.method ?? '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card className="h-fit xl:sticky xl:top-5">
           <CardHeader className="flex-row items-center justify-between border-b border-slate-100 p-4">
             <CardTitle>Check-in QR</CardTitle>
             <Button type="button" variant="ghost" size="icon" aria-label="Maximize QR code" onClick={onMaximizeQr}>
@@ -231,51 +277,7 @@ function ActiveAttendanceSessionView({
             </div>
           </CardContent>
         </Card>
-
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <ActiveMetric label="Remaining" value={formatRemaining(remainingSeconds)} helper="Session closes automatically" tone="blue" />
-          <ActiveMetric label="Enrolled" value={String(session.totalEnrolled)} helper="Students in course" tone="slate" />
-          <ActiveMetric label="Checked in" value={String(session.checkedInCount)} helper={`${session.pendingCount} pending`} tone="green" />
-          <ActiveMetric label="Late" value={String(session.lateCount)} helper={`${session.presentCount} present`} tone="orange" />
-        </div>
       </div>
-
-      <Card>
-        <CardHeader className="flex-col gap-2 border-b border-slate-100 p-4 sm:flex-row sm:items-center sm:justify-between">
-          <CardTitle>Enrolled Students</CardTitle>
-          <Badge variant="secondary">{session.records.length} students</Badge>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[860px] text-left text-sm">
-              <thead className="bg-slate-50 text-xs font-semibold text-slate-600">
-                <tr>
-                  <th className="px-4 py-3">Student</th>
-                  <th className="px-4 py-3">Student ID</th>
-                  <th className="px-4 py-3">Email</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Checked in</th>
-                  <th className="px-4 py-3">Method</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {session.records.map((record) => (
-                  <tr key={record.id}>
-                    <td className="px-4 py-3 font-medium text-slate-800">{record.name}</td>
-                    <td className="px-4 py-3 text-slate-600">{record.institutionId}</td>
-                    <td className="px-4 py-3 text-slate-600">{record.email}</td>
-                    <td className="px-4 py-3">
-                      <Badge variant={attendanceStatusVariant(record.status)}>{record.statusLabel}</Badge>
-                    </td>
-                    <td className="px-4 py-3 text-slate-600">{record.checkedInAt ? formatDateTime(record.checkedInAt) : '-'}</td>
-                    <td className="px-4 py-3 text-slate-600">{record.method ?? '-'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
     </>
   )
 }

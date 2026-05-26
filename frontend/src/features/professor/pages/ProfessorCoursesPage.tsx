@@ -1,30 +1,83 @@
-import { BookOpen, CalendarDays, Clock3, MapPin, Search } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { BookOpen, CalendarDays, Clock3, MapPin, Search, Loader2 } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 
 import { PageHeader } from '@/components/shared/PageHeader'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { professorCourses, type ProfessorCourse, type Tone } from '@/features/professor/data/mockProfessor'
+import { getProfessorCourses } from '@/lib/api/professor'
 import { cn } from '@/lib/utils'
 
+type Tone = 'blue' | 'green' | 'orange' | 'purple' | 'red' | 'teal'
+
+type Course = {
+  id: string
+  code: string
+  name: string
+  semester: string
+  room: string
+  schedule: string
+  students: number
+  attendanceRate: number
+  averageGrade: number
+  pendingGrades: number
+  status: 'Active' | 'Exam Week' | 'Closing'
+  tone: Tone
+}
+
 export function ProfessorCoursesPage() {
+  const [courses, setCourses] = useState<Course[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [query, setQuery] = useState('')
+
+  useEffect(() => {
+    getProfessorCourses()
+      .then((res) => {
+        if (res.success && res.data) {
+          setCourses(res.data.courses)
+        } else {
+          setError(res.message || 'Failed to load courses.')
+        }
+      })
+      .catch(() => {
+        setError('Error connecting to the server.')
+      })
+      .finally(() => {
+        setLoading(false)
+      })
+  }, [])
 
   const visibleCourses = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase()
 
     if (normalizedQuery === '') {
-      return professorCourses
+      return courses
     }
 
-    return professorCourses.filter((course) =>
+    return courses.filter((course) =>
       [course.code, course.name, course.room, course.semester].some((value) =>
         value.toLowerCase().includes(normalizedQuery),
       ),
     )
-  }, [query])
+  }, [query, courses])
+
+  if (loading) {
+    return (
+      <div className="flex h-[400px] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-600">
+        {error}
+      </div>
+    )
+  }
 
   return (
     <>
@@ -47,8 +100,8 @@ export function ProfessorCoursesPage() {
           />
         </div>
         <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500">
-          <Badge variant="secondary">{professorCourses.length} assigned</Badge>
-          <Badge variant="success">{professorCourses.filter((course) => course.status === 'Active').length} active</Badge>
+          <Badge variant="secondary">{courses.length} assigned</Badge>
+          <Badge variant="success">{courses.filter((course) => course.status === 'Active').length} active</Badge>
         </div>
       </div>
 
@@ -69,7 +122,7 @@ export function ProfessorCoursesPage() {
   )
 }
 
-function CourseCard({ course }: { course: ProfessorCourse }) {
+function CourseCard({ course }: { course: Course }) {
   return (
     <Card>
       <CardContent className="p-5">
@@ -88,7 +141,7 @@ function CourseCard({ course }: { course: ProfessorCourse }) {
         </div>
 
         <div className="grid grid-cols-3 gap-3 border-b border-slate-100 py-4 text-sm">
-          <CourseStat label="Students" value={course.students} tone="blue" />
+          <CourseStat label="Students" value={course.students} tone={course.tone} />
           <CourseStat label="Grade" value={course.averageGrade.toFixed(1)} tone="green" />
           <CourseStat label="Attend." value={`${course.attendanceRate}%`} tone="orange" />
         </div>

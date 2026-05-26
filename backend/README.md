@@ -17,6 +17,25 @@ DB_PASSWORD=sems
 
 Do not run destructive migrations against this database. The default Laravel migrations were removed so Eloquent models can be mapped to the existing schema later.
 
+<<<<<<< Updated upstream
+=======
+## Demo Data
+
+The default database seeder loads deterministic student portal demo data:
+
+```bash
+cd backend
+php artisan db:seed
+```
+
+Demo student logins:
+
+- `student1@example.com` / `password` or `STU-1001` / `password`
+- `student2@example.com` / `password` or `STU-1002` / `password`
+
+The demo dataset includes one faculty, one department, one bachelor program, the `2025/2026` academic year, 3rd and 4th semester courses, enrollments, schedules, grades, transcript support rows, attendance support rows, and student dashboard rows. The seeder uses stable keys and updates existing demo rows when run again.
+
+>>>>>>> Stashed changes
 ## Install
 
 ```bash

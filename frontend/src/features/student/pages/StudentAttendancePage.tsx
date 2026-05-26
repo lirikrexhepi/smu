@@ -13,7 +13,6 @@ import {
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
-import { PageHeader } from '@/components/shared/PageHeader'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -91,7 +90,7 @@ export function StudentAttendancePage() {
   if (!attendance) {
     return (
       <>
-        <PageHeader title="Attendance" description="Track your attendance and verify recorded classes." />
+      
         {errorMessage ? (
           <Card>
             <CardContent className="pt-5">
@@ -107,12 +106,7 @@ export function StudentAttendancePage() {
 
   return (
     <>
-      <PageHeader title="Attendance" description="Track your attendance and verify recorded classes." />
 
-      <div className="mb-4">
-        <h1 className="text-2xl font-semibold text-slate-950">Attendance</h1>
-        <p className="mt-1 text-sm text-slate-500">Track your attendance and verify recorded classes.</p>
-      </div>
 
       {errorMessage ? (
         <div className="mb-5 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">

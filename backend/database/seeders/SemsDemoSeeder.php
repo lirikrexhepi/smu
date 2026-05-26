@@ -435,9 +435,9 @@ class SemsDemoSeeder extends Seeder
         $students = [];
 
         foreach ($rows as $row) {
-            $userId = $this->updateOrCreateId('users', ['institution_id' => $row['institution_id']], [
-                'public_id' => $row['public_id'],
+            $userId = $this->updateOrCreateId('users', ['public_id' => $row['public_id']], [
                 'role' => 'student',
+                'institution_id' => $row['institution_id'],
                 'name' => $row['name'],
                 'email' => $row['email'],
                 'email_verified_at' => now(),
@@ -493,9 +493,9 @@ class SemsDemoSeeder extends Seeder
 
     private function seedProfessor(int $facultyId, int $departmentId): int
     {
-        $userId = $this->updateOrCreateId('users', ['institution_id' => 'PROF-CE-100'], [
-            'public_id' => 'prof-demo-ce',
+        $userId = $this->updateOrCreateId('users', ['public_id' => 'prof-demo-ce'], [
             'role' => 'professor',
+            'institution_id' => 'PROF-CE-100',
             'name' => 'Dr. Arben Krasniqi',
             'email' => 'arben.krasniqi@example.com',
             'email_verified_at' => now(),
@@ -733,7 +733,7 @@ class SemsDemoSeeder extends Seeder
             'late_records' => $late,
             'comparison_value' => 3,
             'comparison_direction' => 'up',
-            'comparison_label' => '3% higher than previous 4 weeks',
+            'comparison_label' => 'higher than previous 4 weeks',
             'updated_at' => now(),
             'created_at' => now(),
         ]);

@@ -146,12 +146,13 @@ export function StudentProfilePage() {
   }
 
   function syncStoredStudent(nextProfile: StudentProfile) {
-    if (storedUser?.role !== 'student') {
+    const currentStoredUser = getStoredAuthUser()
+    if (currentStoredUser?.role !== 'student') {
       return
     }
 
     storeAuthUser({
-      ...storedUser,
+      ...currentStoredUser,
       name: nextProfile.fullName,
       email: nextProfile.email,
       faculty: nextProfile.faculty,

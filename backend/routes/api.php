@@ -11,6 +11,10 @@ use App\Http\Controllers\Dashboard\ProfessorDashboardController;
 use App\Http\Controllers\Academic\ProfessorCoursesController;
 use App\Http\Controllers\Attendance\ProfessorAttendanceController;
 use App\Http\Controllers\Gradebook\ProfessorGradebookController;
+use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\AdminUserController;
+use App\Http\Controllers\Admin\AdminCourseController;
+use App\Http\Controllers\Admin\AdminReferenceController;
 use App\Http\Responses\ApiResponse;
 use Illuminate\Support\Facades\Route;
 
@@ -47,5 +51,21 @@ Route::middleware(['jwt.auth', 'role:professor'])->prefix('professor')->group(fu
 });
 
 Route::middleware(['jwt.auth', 'role:admin'])->prefix('admin')->group(function (): void {
-    Route::get('/dashboard', fn () => ApiResponse::success((object) []));
+    Route::get('/dashboard', [AdminDashboardController::class, 'show']);
+    Route::get('/options', [AdminReferenceController::class, 'getOptions']);
+    
+    // User CRUD
+    Route::get('/users', [AdminUserController::class, 'index']);
+    Route::get('/users/{id}', [AdminUserController::class, 'show']);
+    Route::post('/users', [AdminUserController::class, 'store']);
+    Route::put('/users/{id}', [AdminUserController::class, 'update']);
+    Route::delete('/users/{id}', [AdminUserController::class, 'destroy']);
+    
+    // Course CRUD
+    Route::get('/courses', [AdminCourseController::class, 'index']);
+    Route::get('/courses/{id}', [AdminCourseController::class, 'show']);
+    Route::post('/courses', [AdminCourseController::class, 'store']);
+    Route::put('/courses/{id}', [AdminCourseController::class, 'update']);
+    Route::delete('/courses/{id}', [AdminCourseController::class, 'destroy']);
 });
+

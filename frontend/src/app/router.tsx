@@ -5,6 +5,8 @@ import { AuthLayout } from '@/components/layout/AuthLayout'
 import { ProfessorLayout } from '@/components/layout/ProfessorLayout'
 import { StudentLayout } from '@/components/layout/StudentLayout'
 import { AdminDashboardPage } from '@/features/admin/pages/AdminDashboardPage'
+import { AdminUsersPage } from '@/features/admin/pages/AdminUsersPage'
+import { AdminCoursesPage } from '@/features/admin/pages/AdminCoursesPage'
 import { ProtectedRoute } from '@/features/auth/components/ProtectedRoute'
 import { LoginPage } from '@/features/auth/pages/LoginPage'
 import { ProfessorAttendancePage } from '@/features/professor/pages/ProfessorAttendancePage'
@@ -116,6 +118,14 @@ export const router = createBrowserRouter([
       {
         path: 'dashboard',
         element: <AdminDashboardPage />,
+      },
+      {
+        path: 'users',
+        element: <AdminUsersPage />,
+      },
+      {
+        path: 'courses',
+        element: <AdminCoursesPage />,
       },
     ],
   },

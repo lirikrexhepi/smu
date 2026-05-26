@@ -3,7 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Http\Responses\ApiResponse;
-use App\Models\User;
+use App\Models\Identity\User;
 use App\Services\JwtService;
 use Closure;
 use Illuminate\Http\JsonResponse;

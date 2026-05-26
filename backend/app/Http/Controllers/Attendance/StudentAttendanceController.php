@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Attendance;
 
-use App\Exceptions\AttendanceSessionException;
 use App\Http\Responses\ApiResponse;
+use App\Exceptions\AttendanceSessionException;
 use App\Services\AttendanceSessionService;
 use App\Services\StudentAttendanceService;
 use Illuminate\Http\JsonResponse;
@@ -13,13 +13,13 @@ use Illuminate\Support\Facades\Validator;
 final readonly class StudentAttendanceController
 {
     public function __construct(
-        private StudentAttendanceService $attendance,
-        private AttendanceSessionService $attendanceSessions,
+        private StudentAttendanceService $service,
+        private AttendanceSessionService $attendanceSessions
     ) {}
 
     public function show(Request $request): JsonResponse
     {
-        return ApiResponse::success($this->attendance->forRequest($request), 'Student attendance loaded');
+        return ApiResponse::success($this->service->forRequest($request));
     }
 
     public function checkIn(Request $request): JsonResponse

@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use Database\Seeders\SemsDemoSeeder;
+use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -35,7 +35,7 @@ final class StudentPortalReadTest extends TestCase
 
     public function test_student_courses_overview_is_database_backed_and_filterable(): void
     {
-        $this->seed(SemsDemoSeeder::class);
+        $this->seed(DatabaseSeeder::class);
 
         $token = $this->loginToken('STU-1001');
 
@@ -86,7 +86,7 @@ final class StudentPortalReadTest extends TestCase
 
     public function test_course_detail_is_limited_to_authenticated_student_enrollment(): void
     {
-        $this->seed(SemsDemoSeeder::class);
+        $this->seed(DatabaseSeeder::class);
 
         $firstStudentToken = $this->loginToken('STU-1001');
         $secondStudentToken = $this->loginToken('STU-1002');
@@ -121,7 +121,7 @@ final class StudentPortalReadTest extends TestCase
 
     public function test_grades_transcript_returns_student_rows_and_filters(): void
     {
-        $this->seed(SemsDemoSeeder::class);
+        $this->seed(DatabaseSeeder::class);
 
         $firstStudentToken = $this->loginToken('STU-1001');
         $secondStudentToken = $this->loginToken('STU-1002');
@@ -156,7 +156,7 @@ final class StudentPortalReadTest extends TestCase
 
     public function test_grade_record_change_propagates_to_dashboard_transcript_and_course_detail(): void
     {
-        $this->seed(SemsDemoSeeder::class);
+        $this->seed(DatabaseSeeder::class);
 
         $token = $this->loginToken('STU-1001');
         $enrollmentId = DB::table('student_enrollments')

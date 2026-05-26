@@ -111,7 +111,7 @@ export type StudentProfileUpdate = {
 
 export type StudentCourseTone = 'blue' | 'green' | 'orange' | 'purple'
 
-export type StudentCourseStatus = 'active' | 'registered' | 'upcoming'
+export type StudentCourseStatus = 'active' | 'registered' | 'upcoming' | 'completed'
 
 export type StudentCourseEvent = {
   id: string
@@ -380,6 +380,29 @@ export type StudentAttendance = {
   lastRecorded: StudentAttendanceLastRecorded | null
   weeklySchedule: StudentAttendanceScheduleDay[]
   history: StudentAttendanceHistoryRecord[]
+}
+
+export type StudentAttendanceCheckInResult = {
+  status: 'present' | 'late' | string
+  statusLabel: string
+  checkedInAt: string
+  course: {
+    courseId: string
+    code: string
+    name: string
+    room: string
+  }
+  session: {
+    id: string
+    startsAt: string
+    endsAt: string
+    lateAfterAt: string
+  }
+  professor: {
+    id: string
+    name: string
+    email: string
+  }
 }
 
 export type StudentGradesTranscriptSemesterOption = {

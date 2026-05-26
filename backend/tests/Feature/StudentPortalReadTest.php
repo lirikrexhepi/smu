@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use Database\Seeders\SemsDemoSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 final class StudentPortalReadTest extends TestCase
@@ -103,7 +104,7 @@ final class StudentPortalReadTest extends TestCase
             ->assertJsonCount(1, 'data.exams')
             ->assertJsonCount(2, 'data.announcements')
             ->assertJsonCount(3, 'data.grades.records')
-            ->assertJsonCount(3, 'data.attendance.records');
+            ->assertJsonCount(8, 'data.attendance.records');
 
         $this->withHeader('Authorization', 'Bearer '.$secondStudentToken)
             ->getJson('/api/student/courses/ce-4-sec')
@@ -129,11 +130,11 @@ final class StudentPortalReadTest extends TestCase
             ->getJson('/api/student/grades-transcript')
             ->assertOk()
             ->assertJsonPath('data.studentKey', 'stu-demo-1001')
-            ->assertJsonPath('data.selectedSemester', 'sem-4')
+            ->assertJsonPath('data.selectedSemester', 'all')
             ->assertJsonPath('data.summary.averageGrade', 8.67)
-            ->assertJsonCount(2, 'data.filters.semesters')
-            ->assertJsonCount(6, 'data.filters.courses')
-            ->assertJsonCount(6, 'data.courseGrades')
+            ->assertJsonCount(3, 'data.filters.semesters')
+            ->assertJsonCount(12, 'data.filters.courses')
+            ->assertJsonCount(12, 'data.courseGrades')
             ->assertJsonPath('data.courseGrades.4.courseId', 'ce-4-sec')
             ->assertJsonPath('data.courseGrades.4.numericGrade', 7);
 
@@ -151,6 +152,46 @@ final class StudentPortalReadTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.studentKey', 'stu-demo-1002')
             ->assertJsonPath('data.courseGrades.0.numericGrade', 6);
+    }
+
+    public function test_grade_record_change_propagates_to_dashboard_transcript_and_course_detail(): void
+    {
+        $this->seed(SemsDemoSeeder::class);
+
+        $token = $this->loginToken('STU-1001');
+        $enrollmentId = DB::table('student_enrollments')
+            ->join('students', 'students.id', '=', 'student_enrollments.student_id')
+            ->join('users', 'users.id', '=', 'students.user_id')
+            ->join('courses', 'courses.id', '=', 'student_enrollments.course_id')
+            ->where('users.institution_id', 'STU-1001')
+            ->where('courses.course_key', 'ce-4-sec')
+            ->value('student_enrollments.id');
+
+        DB::table('course_grade_records')
+            ->where('student_enrollment_id', $enrollmentId)
+            ->where('grade_key', 'midterm')
+            ->update(['grade' => 10]);
+
+        $this->withHeader('Authorization', 'Bearer '.$token)
+            ->getJson('/api/student/dashboard')
+            ->assertOk()
+            ->assertJsonPath('data.metrics.0.value', '8.9')
+            ->assertJsonPath('data.latestGrades.1.course', 'CE210')
+            ->assertJsonPath('data.latestGrades.1.grade', '10 Excellent');
+
+        $this->withHeader('Authorization', 'Bearer '.$token)
+            ->getJson('/api/student/grades-transcript?semester=all&courseId=ce-4-sec')
+            ->assertOk()
+            ->assertJsonPath('data.summary.averageGrade', 8.64)
+            ->assertJsonPath('data.gradeDistribution.1.grade', 9)
+            ->assertJsonPath('data.gradeDistribution.1.count', 1)
+            ->assertJsonPath('data.courseGrades.0.numericGrade', 8.64);
+
+        $this->withHeader('Authorization', 'Bearer '.$token)
+            ->getJson('/api/student/courses/ce-4-sec')
+            ->assertOk()
+            ->assertJsonPath('data.grades.currentGradePoints', '8.6')
+            ->assertJsonPath('data.grades.records.0.score', '10/10');
     }
 
     private function loginToken(string $identifier): string

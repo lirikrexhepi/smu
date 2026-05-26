@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\DB;
 
 final class StudentCoursesService
 {
+    public function __construct(private readonly StudentAcademicRecordsService $records) {}
+
     /**
      * @return array<string, mixed>
      */
@@ -24,10 +26,11 @@ final class StudentCoursesService
 
         $courses = $this->overviewRows((int) $student->id, $request);
         $deadlines = $this->upcomingDeadlines((int) $student->id, $request);
+        $semester = $this->currentSemester((int) $student->id);
 
         return [
-            'semester' => (string) ($student->current_semester_label ?? ''),
-            'academicYear' => (string) ($student->academic_year_label ?? ''),
+            'semester' => (string) ($semester?->name ?? ''),
+            'academicYear' => (string) ($semester?->academic_year_name ?? ''),
             'summary' => $this->overviewSummary($courses, $deadlines, (int) ($student->credits_required ?? 0)),
             'filters' => [
                 'semesters' => $this->semesterOptions((int) $student->id),
@@ -82,7 +85,7 @@ final class StudentCoursesService
             ],
             'courseInfo' => $this->courseInfo($courseDbId),
             'materials' => $this->materials($courseDbId),
-            'attendance' => $this->attendance($enrollmentId, (int) $course->attendance_percentage),
+            'attendance' => $this->attendance($enrollmentId),
             'grades' => $this->grades($enrollmentId, $courseDbId, $course),
             'assessments' => $this->events($courseDbId, 'assessment')->map(fn (object $event): array => $this->assessmentPayload($event))->all(),
             'exams' => $this->events($courseDbId, 'exam')->map(fn (object $event): array => $this->examPayload($event))->all(),
@@ -91,10 +94,10 @@ final class StudentCoursesService
             'enrollment' => [
                 'status' => (string) $course->enrollment_status,
                 'statusLabel' => (string) ($course->status_label ?: ucfirst((string) $course->enrollment_status)),
-                'currentGrade' => (string) ($course->current_grade ?? ''),
-                'currentGradePoints' => $this->decimalLabel($course->current_grade_points),
-                'attendancePercentage' => (int) $course->attendance_percentage,
-                'nextImportantEventId' => (string) ($course->next_event_key ?? ''),
+                'currentGrade' => $this->currentGradeLabel($course),
+                'currentGradePoints' => $this->records->decimalLabel($course->numeric_grade),
+                'attendancePercentage' => (int) ($course->attendance_percentage ?? 0),
+                'nextImportantEventId' => (string) ($this->nextImportantEvent($courseDbId)?->event_key ?? ''),
                 'enrolledAt' => (string) ($course->enrolled_on ?? ''),
             ],
         ];
@@ -114,10 +117,10 @@ final class StudentCoursesService
         match ($sort) {
             'name-asc' => $query->orderBy('courses.name'),
             'name-desc' => $query->orderByDesc('courses.name'),
-            'grade-desc' => $query->orderByDesc('student_enrollments.current_grade_points'),
-            'grade-asc' => $query->orderBy('student_enrollments.current_grade_points'),
-            'attendance-desc' => $query->orderByDesc('student_enrollments.attendance_percentage'),
-            'attendance-asc' => $query->orderBy('student_enrollments.attendance_percentage'),
+            'grade-desc' => $query->orderByDesc('grade_stats.numeric_grade'),
+            'grade-asc' => $query->orderBy('grade_stats.numeric_grade'),
+            'attendance-desc' => $query->orderByDesc('attendance_stats.attendance_percentage'),
+            'attendance-asc' => $query->orderBy('attendance_stats.attendance_percentage'),
             'ects-desc' => $query->orderByDesc('courses.ects'),
             default => $query
                 ->orderByRaw("case student_enrollments.status when 'active' then 1 when 'registered' then 2 when 'upcoming' then 3 when 'completed' then 4 else 5 end")
@@ -148,6 +151,21 @@ final class StudentCoursesService
             ->first();
     }
 
+    private function currentSemester(int $studentId): ?object
+    {
+        return DB::table('student_enrollments')
+            ->join('semesters', 'semesters.id', '=', 'student_enrollments.semester_id')
+            ->leftJoin('academic_years', 'academic_years.id', '=', 'semesters.academic_year_id')
+            ->where('student_enrollments.student_id', $studentId)
+            ->where('student_enrollments.status', '!=', 'dropped')
+            ->select('semesters.*', 'academic_years.name as academic_year_name')
+            ->distinct()
+            ->orderByDesc('semesters.is_current')
+            ->orderByDesc('semesters.number')
+            ->orderByDesc('semesters.id')
+            ->first();
+    }
+
     private function enrollmentBaseQuery(int $studentId): Builder
     {
         return DB::table('student_enrollments')
@@ -155,7 +173,12 @@ final class StudentCoursesService
             ->leftJoin('semesters', 'semesters.id', '=', 'student_enrollments.semester_id')
             ->leftJoin('academic_years', 'academic_years.id', '=', 'semesters.academic_year_id')
             ->leftJoin('course_schedules', 'course_schedules.course_id', '=', 'courses.id')
-            ->leftJoin('course_events as next_events', 'next_events.id', '=', 'student_enrollments.next_important_event_id')
+            ->leftJoinSub($this->records->gradeAveragesSubquery(), 'grade_stats', function ($join): void {
+                $join->on('grade_stats.student_enrollment_id', '=', 'student_enrollments.id');
+            })
+            ->leftJoinSub($this->records->attendanceStatsSubquery(), 'attendance_stats', function ($join): void {
+                $join->on('attendance_stats.student_enrollment_id', '=', 'student_enrollments.id');
+            })
             ->leftJoin('course_professor', function ($join): void {
                 $join->on('course_professor.course_id', '=', 'courses.id')
                     ->where('course_professor.role', '=', 'instructor');
@@ -168,10 +191,14 @@ final class StudentCoursesService
                 'student_enrollments.id as enrollment_id',
                 'student_enrollments.status as enrollment_status',
                 'student_enrollments.status_label',
-                'student_enrollments.current_grade',
-                'student_enrollments.current_grade_points',
-                'student_enrollments.attendance_percentage',
                 'student_enrollments.enrolled_on',
+                'grade_stats.numeric_grade',
+                'grade_stats.grade_count',
+                'attendance_stats.attendance_percentage',
+                'attendance_stats.total_sessions',
+                'attendance_stats.sessions_attended',
+                'attendance_stats.absences',
+                'attendance_stats.late_records',
                 'courses.id as course_db_id',
                 'courses.course_key',
                 'courses.code',
@@ -195,16 +222,6 @@ final class StudentCoursesService
                 'professor_users.email as professor_email',
                 'professors.office_hours',
                 'professors.consultation',
-                'next_events.event_key as next_event_key',
-                'next_events.title as next_event_title',
-                'next_events.type as next_event_type',
-                'next_events.category as next_event_category',
-                'next_events.event_date as next_event_date',
-                'next_events.event_time as next_event_time',
-                'next_events.date_label as next_event_date_label',
-                'next_events.time_label as next_event_time_label',
-                'next_events.status_label as next_event_status_label',
-                'next_events.tone as next_event_tone',
             );
     }
 
@@ -288,7 +305,7 @@ final class StudentCoursesService
     private function overviewSummary(Collection $courses, array $deadlines, int $ectsTarget): array
     {
         $grades = $courses
-            ->map(fn (object $course): float => (float) ($course->current_grade_points ?? 0))
+            ->map(fn (object $course): float => (float) ($course->numeric_grade ?? 0))
             ->filter(fn (float $grade): bool => $grade > 0)
             ->values();
 
@@ -368,19 +385,55 @@ final class StudentCoursesService
             'semester' => (string) ($course->semester_name ?? ''),
             'enrollmentStatus' => (string) $course->enrollment_status,
             'enrollmentStatusLabel' => (string) ($course->status_label ?: ucfirst((string) $course->enrollment_status)),
-            'currentGrade' => (string) ($course->current_grade ?? ''),
-            'currentGradePoints' => $this->decimalLabel($course->current_grade_points),
-            'attendancePercentage' => (int) $course->attendance_percentage,
-            'nextImportantEvent' => $course->next_event_key === null ? null : [
-                'id' => (string) $course->next_event_key,
-                'title' => (string) $course->next_event_title,
-                'type' => (string) ($course->next_event_type ?? $course->next_event_category ?? ''),
-                'date' => $this->eventDateLabel($course->next_event_date, $course->next_event_date_label),
-                'time' => (string) ($course->next_event_time_label ?? $this->timeLabel($course->next_event_time)),
-                'statusLabel' => (string) ($course->next_event_status_label ?? ''),
-                'tone' => $this->tone($course->next_event_tone),
-            ],
+            'currentGrade' => $this->currentGradeLabel($course),
+            'currentGradePoints' => $this->records->decimalLabel($course->numeric_grade),
+            'attendancePercentage' => (int) ($course->attendance_percentage ?? 0),
+            'nextImportantEvent' => $this->nextImportantEventPayload((int) $course->course_db_id),
         ];
+    }
+
+    private function currentGradeLabel(object $course): string
+    {
+        $label = $this->records->gradeLabel($course->numeric_grade);
+
+        if ($label === '') {
+            return '';
+        }
+
+        return $course->enrollment_status === 'completed' ? $label : $label.' projected';
+    }
+
+    /**
+     * @return array<string, string>|null
+     */
+    private function nextImportantEventPayload(int $courseId): ?array
+    {
+        $event = $this->nextImportantEvent($courseId);
+
+        if ($event === null) {
+            return null;
+        }
+
+        return [
+            'id' => (string) $event->event_key,
+            'title' => (string) $event->title,
+            'type' => (string) ($event->type ?? $event->category ?? ''),
+            'date' => $this->eventDateLabel($event->event_date, $event->date_label),
+            'time' => (string) ($event->time_label ?? $this->timeLabel($event->event_time)),
+            'statusLabel' => (string) ($event->status_label ?? ''),
+            'tone' => $this->tone($event->tone),
+        ];
+    }
+
+    private function nextImportantEvent(int $courseId): ?object
+    {
+        return DB::table('course_events')
+            ->where('course_id', $courseId)
+            ->whereDate('event_date', '>=', Carbon::today()->toDateString())
+            ->orderBy('event_date')
+            ->orderBy('event_time')
+            ->orderBy('id')
+            ->first();
     }
 
     /**
@@ -406,17 +459,22 @@ final class StudentCoursesService
      */
     private function courseInfo(int $courseId): array
     {
-        return DB::table('course_info_items')
-            ->where('course_id', $courseId)
-            ->orderBy('sort_order')
-            ->orderBy('id')
-            ->get()
-            ->map(fn (object $item): array => [
-                'id' => (string) $item->item_key,
-                'label' => (string) $item->label,
-                'value' => (string) $item->value,
-            ])
-            ->all();
+        $course = DB::table('courses')
+            ->leftJoin('semesters', 'semesters.id', '=', 'courses.semester_id')
+            ->where('courses.id', $courseId)
+            ->select('courses.ects', 'courses.room', 'courses.grading_breakdown', 'semesters.name as semester_name')
+            ->first();
+
+        if ($course === null) {
+            return [];
+        }
+
+        return [
+            ['id' => 'credits', 'label' => 'ECTS', 'value' => (string) $course->ects],
+            ['id' => 'semester', 'label' => 'Semester', 'value' => (string) ($course->semester_name ?? '')],
+            ['id' => 'room', 'label' => 'Room', 'value' => (string) ($course->room ?? '')],
+            ['id' => 'assessment', 'label' => 'Assessment', 'value' => (string) ($course->grading_breakdown ?? '')],
+        ];
     }
 
     /**
@@ -443,9 +501,10 @@ final class StudentCoursesService
     /**
      * @return array<string, mixed>
      */
-    private function attendance(int $enrollmentId, int $percentage): array
+    private function attendance(int $enrollmentId): array
     {
-        $summary = DB::table('course_attendance_summaries')
+        $summary = DB::query()
+            ->fromSub($this->records->attendanceStatsSubquery(), 'attendance_stats')
             ->where('student_enrollment_id', $enrollmentId)
             ->first();
 
@@ -465,8 +524,8 @@ final class StudentCoursesService
 
         if ($summary === null) {
             return [
-                'percentage' => $percentage,
-                'requiredPercentage' => 75,
+                'percentage' => 0,
+                'requiredPercentage' => StudentAcademicRecordsService::REQUIRED_ATTENDANCE_PERCENTAGE,
                 'sessionsHeld' => 0,
                 'sessionsAttended' => 0,
                 'status' => 'No attendance recorded',
@@ -476,17 +535,15 @@ final class StudentCoursesService
         }
 
         return [
-            'percentage' => $percentage,
-            'requiredPercentage' => (int) $summary->required_percentage,
-            'sessionsHeld' => (int) $summary->sessions_held,
-            'sessionsAttended' => (int) $summary->sessions_attended,
-            'status' => (string) ($summary->status ?? ''),
-            'summary' => collect($this->jsonArray($summary->summary_items))
-                ->map(fn (mixed $item): array => [
-                    'label' => (string) ($item['label'] ?? ''),
-                    'value' => (string) ($item['value'] ?? ''),
-                ])
-                ->all(),
+            'percentage' => (int) ($summary->attendance_percentage ?? 0),
+            'requiredPercentage' => StudentAcademicRecordsService::REQUIRED_ATTENDANCE_PERCENTAGE,
+            'sessionsHeld' => (int) ($summary->total_sessions ?? 0),
+            'sessionsAttended' => (int) ($summary->sessions_attended ?? 0),
+            'status' => $this->records->attendanceStatus((int) ($summary->attendance_percentage ?? 0)),
+            'summary' => [
+                ['label' => 'Present', 'value' => (string) ($summary->sessions_attended ?? 0)],
+                ['label' => 'Missed', 'value' => (string) ($summary->absences ?? 0)],
+            ],
             'records' => $records,
         ];
     }
@@ -497,8 +554,8 @@ final class StudentCoursesService
     private function grades(int $enrollmentId, int $courseId, object $course): array
     {
         return [
-            'currentGrade' => (string) ($course->current_grade ?? ''),
-            'currentGradePoints' => $this->decimalLabel($course->current_grade_points),
+            'currentGrade' => $this->currentGradeLabel($course),
+            'currentGradePoints' => $this->records->decimalLabel($course->numeric_grade),
             'scale' => '5-10 numeric scale',
             'breakdown' => DB::table('course_grade_components')
                 ->where('course_id', $courseId)
@@ -518,8 +575,8 @@ final class StudentCoursesService
                     'id' => (string) ($record->grade_key ?? $record->id),
                     'title' => (string) $record->title,
                     'type' => (string) ($record->type ?? ''),
-                    'score' => (string) ($record->score ?? ''),
-                    'weight' => (string) ($record->weight_label ?? ''),
+                    'score' => $this->records->decimalLabel($record->grade).'/10',
+                    'weight' => $record->weight === null ? '' : ((string) $record->weight).'%',
                     'date' => (string) ($record->date_label ?: $this->dateLabel($record->graded_on)),
                     'status' => (string) ($record->status ?? ''),
                 ])

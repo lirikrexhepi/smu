@@ -3,12 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Http\Responses\ApiResponse;
+use App\Services\StudentAcademicRecordsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-final class StudentProfileController
+final readonly class StudentProfileController
 {
+    public function __construct(private StudentAcademicRecordsService $records) {}
+
     public function show(Request $request): JsonResponse
     {
         return ApiResponse::success($this->profileData($request));
@@ -44,12 +47,18 @@ final class StudentProfileController
     private function profileData(Request $request): array
     {
         $user = $request->user();
-        $student = $user === null ? null : DB::table('students')->where('user_id', $user->id)->first();
+        $student = $user === null ? null : DB::table('students')
+            ->leftJoin('programs', 'programs.id', '=', 'students.program_id')
+            ->where('students.user_id', $user->id)
+            ->select('students.*', 'programs.name as program_name', 'programs.required_credits')
+            ->first();
         $contact = $student === null ? null : DB::table('student_emergency_contacts')
             ->where('student_id', $student->id)
             ->orderByDesc('is_primary')
             ->orderBy('id')
             ->first();
+        $semester = $student === null ? null : $this->currentSemester((int) $student->id);
+        $academic = $student === null ? $this->emptyAcademicSummary() : $this->academicSummary((int) $student->id, (int) ($student->required_credits ?? 0));
 
         $fullName = (string) ($user?->name ?? '');
 
@@ -62,14 +71,14 @@ final class StudentProfileController
             'studentStatusLabel' => (string) ($student?->status_label ?? $student?->status ?? ''),
             'faculty' => (string) ($user?->faculty?->name ?? ''),
             'department' => (string) ($user?->department?->name ?? ''),
-            'program' => '',
+            'program' => (string) ($student?->program_name ?? ''),
             'yearOfStudy' => (string) ($student?->year_of_study ?? ''),
-            'semester' => (string) ($student?->current_semester_label ?? ''),
-            'academicYear' => (string) ($student?->academic_year_label ?? ''),
-            'currentGpa' => (string) ($student?->current_gpa ?? ''),
-            'creditsEarned' => (string) ($student?->credits_earned ?? '0'),
-            'creditsRequired' => (string) ($student?->credits_required ?? '0'),
-            'academicStanding' => (string) ($student?->academic_standing ?? ''),
+            'semester' => (string) ($semester?->name ?? ''),
+            'academicYear' => (string) ($semester?->academic_year_name ?? ''),
+            'currentGpa' => $academic['currentGpa'],
+            'creditsEarned' => $academic['creditsEarned'],
+            'creditsRequired' => (string) ($student?->required_credits ?? '0'),
+            'academicStanding' => $academic['academicStanding'],
             'email' => (string) ($user?->email ?? ''),
             'phone' => (string) ($student?->phone ?? ''),
             'address' => (string) ($student?->address ?? ''),
@@ -84,6 +93,55 @@ final class StudentProfileController
             ],
             'updatedAt' => $student?->profile_updated_at,
         ];
+    }
+
+    private function currentSemester(int $studentId): ?object
+    {
+        return DB::table('student_enrollments')
+            ->join('semesters', 'semesters.id', '=', 'student_enrollments.semester_id')
+            ->leftJoin('academic_years', 'academic_years.id', '=', 'semesters.academic_year_id')
+            ->where('student_enrollments.student_id', $studentId)
+            ->where('student_enrollments.status', '!=', 'dropped')
+            ->select('semesters.*', 'academic_years.name as academic_year_name')
+            ->distinct()
+            ->orderByDesc('semesters.is_current')
+            ->orderByDesc('semesters.number')
+            ->orderByDesc('semesters.id')
+            ->first();
+    }
+
+    /**
+     * @return array{currentGpa: string, creditsEarned: string, academicStanding: string}
+     */
+    private function academicSummary(int $studentId, int $requiredCredits): array
+    {
+        $rows = DB::table('student_enrollments')
+            ->join('courses', 'courses.id', '=', 'student_enrollments.course_id')
+            ->leftJoinSub($this->records->gradeAveragesSubquery(), 'grade_stats', function ($join): void {
+                $join->on('grade_stats.student_enrollment_id', '=', 'student_enrollments.id');
+            })
+            ->where('student_enrollments.student_id', $studentId)
+            ->where('student_enrollments.status', '!=', 'dropped')
+            ->whereNotNull('grade_stats.numeric_grade')
+            ->select('student_enrollments.status', 'courses.ects', 'grade_stats.numeric_grade')
+            ->get();
+
+        $completed = $rows->filter(fn (object $row): bool => $row->status === 'completed' && (float) $row->numeric_grade >= 6);
+        $average = $rows->isEmpty() ? 0 : round((float) $rows->avg('numeric_grade'), 2);
+
+        return [
+            'currentGpa' => $this->records->decimalLabel($average),
+            'creditsEarned' => (string) $completed->sum('ects'),
+            'academicStanding' => $average >= 6 || $requiredCredits === 0 ? 'Good standing' : 'Academic risk',
+        ];
+    }
+
+    /**
+     * @return array{currentGpa: string, creditsEarned: string, academicStanding: string}
+     */
+    private function emptyAcademicSummary(): array
+    {
+        return ['currentGpa' => '', 'creditsEarned' => '0', 'academicStanding' => ''];
     }
 
     private function initials(string $name): string

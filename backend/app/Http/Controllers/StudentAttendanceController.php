@@ -2,48 +2,54 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\AttendanceSessionException;
 use App\Http\Responses\ApiResponse;
+use App\Services\AttendanceSessionService;
+use App\Services\StudentAttendanceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
-final class StudentAttendanceController
+final readonly class StudentAttendanceController
 {
+    public function __construct(
+        private StudentAttendanceService $attendance,
+        private AttendanceSessionService $attendanceSessions,
+    ) {}
+
     public function show(Request $request): JsonResponse
     {
-        return ApiResponse::success([
-            'studentKey' => (string) ($request->user()?->public_id ?? ''),
-            'semester' => '',
-            'academicYear' => '',
-            'selectedCourseId' => null,
-            'selectedSemester' => '',
-            'selectedWeek' => '',
-            'filters' => [
-                'courses' => [],
-                'semesters' => [],
-            ],
-            'week' => [
-                'startDate' => '',
-                'endDate' => '',
-                'label' => '',
-                'requestedDate' => null,
-            ],
-            'summary' => [
-                'overallAttendance' => 0,
-                'presentSessions' => 0,
-                'totalSessions' => 0,
-                'absences' => 0,
-                'lateRecords' => 0,
-                'absenceRate' => 0,
-                'lateRate' => 0,
-                'comparisonVsLast4Weeks' => [
-                    'value' => 0,
-                    'direction' => 'flat',
-                    'label' => 'No previous attendance data',
-                ],
-            ],
-            'lastRecorded' => null,
-            'weeklySchedule' => [],
-            'history' => [],
+        return ApiResponse::success($this->attendance->forRequest($request), 'Student attendance loaded');
+    }
+
+    public function checkIn(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'code' => ['nullable', 'string', 'regex:/^\d{6}$/'],
+            'qrToken' => ['nullable', 'string', 'max:255'],
         ]);
+
+        if ($validator->fails()) {
+            return ApiResponse::error('The given data was invalid.', $validator->errors()->toArray(), 422);
+        }
+
+        $code = trim((string) $request->input('code', ''));
+        $qrToken = trim((string) $request->input('qrToken', ''));
+
+        if ($code === '' && $qrToken === '') {
+            return ApiResponse::error('Enter a 6-digit code or scan a QR token.', status: 422);
+        }
+
+        try {
+            $result = $this->attendanceSessions->checkIn(
+                $request->user(),
+                $code === '' ? null : $code,
+                $qrToken === '' ? null : $qrToken
+            );
+
+            return ApiResponse::success($result, 'Attendance check-in recorded');
+        } catch (AttendanceSessionException $exception) {
+            return ApiResponse::error($exception->getMessage(), status: $exception->status());
+        }
     }
 }

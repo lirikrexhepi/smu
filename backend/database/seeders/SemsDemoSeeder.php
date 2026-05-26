@@ -79,8 +79,9 @@ class SemsDemoSeeder extends Seeder
             ]),
         ];
 
-        $professorId = $this->seedProfessor($facultyId, $departmentId);
-        $courses = $this->seedCourses($departmentId, $semesters, $professorId);
+        $professorIds = $this->seedProfessors($facultyId, $departmentId);
+        $this->seedAdmin($facultyId, $departmentId);
+        $courses = $this->seedCourses($departmentId, $semesters, $professorIds);
         $students = $this->seedStudents($facultyId, $departmentId, $programId);
 
         foreach ($students as $student) {
@@ -91,8 +92,10 @@ class SemsDemoSeeder extends Seeder
     /**
      * @return array<int, array<string, mixed>>
      */
-    private function seedCourses(int $departmentId, array $semesters, int $professorId): array
+    private function seedCourses(int $departmentId, array $semesters, array $professorIds): array
     {
+        $activeDemoSchedule = $this->activeDemoSchedule();
+
         $courseRows = [
             [
                 'key' => 'ce-3-db',
@@ -185,10 +188,10 @@ class SemsDemoSeeder extends Seeder
                 'ects' => 5,
                 'semester_code' => 'sem-4',
                 'room' => 'B-208',
-                'days_label' => 'Mon, Wed',
-                'days' => ['Monday', 'Wednesday'],
-                'starts_at' => '09:00:00',
-                'ends_at' => '10:30:00',
+                'days_label' => $activeDemoSchedule['days_label'],
+                'days' => $activeDemoSchedule['days'],
+                'starts_at' => $activeDemoSchedule['starts_at'],
+                'ends_at' => $activeDemoSchedule['ends_at'],
                 'topics' => ['HTTP', 'Laravel basics', 'REST APIs', 'Frontend integration'],
                 'outcomes' => ['Build API endpoints', 'Validate requests', 'Connect frontend views to backend data'],
             ],
@@ -284,6 +287,14 @@ class SemsDemoSeeder extends Seeder
                 'created_at' => now(),
             ]);
 
+            $professorId = $professorIds[count($courses) % count($professorIds)];
+
+            DB::table('course_professor')
+                ->where('course_id', $courseId)
+                ->where('role', 'instructor')
+                ->where('professor_id', '!=', $professorId)
+                ->delete();
+
             $this->updateOrCreateId('course_professor', [
                 'course_id' => $courseId,
                 'professor_id' => $professorId,
@@ -308,17 +319,18 @@ class SemsDemoSeeder extends Seeder
             ]);
 
             foreach ([
-                'credits' => ['label' => 'ECTS', 'value' => (string) $row['ects'], 'sort' => 1],
-                'semester' => ['label' => 'Semester', 'value' => $row['semester_code'] === 'sem-3' ? '3rd Semester' : '4th Semester', 'sort' => 2],
-                'room' => ['label' => 'Room', 'value' => $row['room'], 'sort' => 3],
-            ] as $key => $item) {
-                $this->updateOrCreateId('course_info_items', [
+                ['key' => 'syllabus', 'title' => $row['name'].' Syllabus', 'type' => 'PDF', 'size' => '420 KB', 'date' => $row['semester_code'] === 'sem-3' ? '2025-10-01 09:00:00' : '2026-02-17 09:00:00'],
+                ['key' => 'lecture-notes', 'title' => 'Lecture Notes Pack', 'type' => 'PDF', 'size' => '1.8 MB', 'date' => $row['semester_code'] === 'sem-3' ? '2025-11-10 09:00:00' : '2026-04-08 09:00:00'],
+            ] as $material) {
+                $this->updateOrCreateId('course_materials', [
                     'course_id' => $courseId,
-                    'item_key' => $key,
+                    'material_key' => $material['key'],
                 ], [
-                    'label' => $item['label'],
-                    'value' => $item['value'],
-                    'sort_order' => $item['sort'],
+                    'title' => $material['title'],
+                    'type' => $material['type'],
+                    'size_label' => $material['size'],
+                    'download_url' => '/uploads/materials/test-document.txt',
+                    'published_at' => $material['date'],
                     'updated_at' => now(),
                     'created_at' => now(),
                 ]);
@@ -338,6 +350,28 @@ class SemsDemoSeeder extends Seeder
                     'created_at' => now(),
                 ]);
             }
+
+            $assessmentDate = $row['semester_code'] === 'sem-3' ? '2025-11-20' : '2026-04-29';
+            $this->updateOrCreateId('course_events', [
+                'course_id' => $courseId,
+                'event_key' => 'midterm',
+                'category' => 'assessment',
+            ], [
+                'title' => $row['name'].' Midterm',
+                'type' => 'Midterm',
+                'event_date' => $assessmentDate,
+                'event_time' => '10:00:00',
+                'date_label' => date('M j, Y', strtotime($assessmentDate)),
+                'time_label' => '10:00',
+                'status_label' => $row['semester_code'] === 'sem-3' ? 'Completed' : 'Graded',
+                'tone' => $row['semester_code'] === 'sem-3' ? 'green' : 'purple',
+                'mode' => 'On campus',
+                'duration' => '75 minutes',
+                'room' => $row['room'],
+                'description' => 'Covers lectures, lab work, and assigned readings from the first half of the course.',
+                'updated_at' => now(),
+                'created_at' => now(),
+            ]);
 
             $eventDate = $row['semester_code'] === 'sem-3' ? '2026-01-20' : '2026-06-12';
             $this->updateOrCreateId('course_events', [
@@ -383,6 +417,23 @@ class SemsDemoSeeder extends Seeder
                 'created_at' => now(),
             ]);
 
+            foreach ([
+                ['key' => 'welcome', 'title' => 'Course workspace opened', 'body' => 'The course workspace now includes the syllabus, weekly topics, and first set of materials.', 'date' => $row['semester_code'] === 'sem-3' ? '2025-10-01' : '2026-02-17'],
+                ['key' => 'project', 'title' => 'Project guidance published', 'body' => 'Project requirements and grading expectations are available in the materials section.', 'date' => $row['semester_code'] === 'sem-3' ? '2025-12-01' : '2026-05-20'],
+            ] as $announcement) {
+                $this->updateOrCreateId('course_announcements', [
+                    'course_id' => $courseId,
+                    'announcement_key' => $announcement['key'],
+                ], [
+                    'title' => $announcement['title'],
+                    'body' => $announcement['body'],
+                    'published_on' => $announcement['date'],
+                    'date_label' => date('M j', strtotime($announcement['date'])),
+                    'updated_at' => now(),
+                    'created_at' => now(),
+                ]);
+            }
+
             $courses[$row['key']] = $row + [
                 'id' => $courseId,
                 'semester_id' => $semesterId,
@@ -390,6 +441,23 @@ class SemsDemoSeeder extends Seeder
         }
 
         return $courses;
+    }
+
+    /**
+     * @return array{days_label: string, days: array<int, string>, starts_at: string, ends_at: string}
+     */
+    private function activeDemoSchedule(): array
+    {
+        $now = now();
+        $startHour = max(0, (int) $now->format('H') - 1);
+        $endHour = min(23, (int) $now->format('H') + 1);
+
+        return [
+            'days_label' => $now->format('D'),
+            'days' => [$now->format('l')],
+            'starts_at' => sprintf('%02d:00:00', $startHour),
+            'ends_at' => sprintf('%02d:59:00', $endHour),
+        ];
     }
 
     /**
@@ -411,8 +479,6 @@ class SemsDemoSeeder extends Seeder
                 'gender' => 'Female',
                 'nationality' => 'Kosovar',
                 'personal_number' => 'DEMO1001',
-                'gpa' => 8.67,
-                'credits' => 30,
             ],
             [
                 'public_id' => 'stu-demo-1002',
@@ -427,17 +493,15 @@ class SemsDemoSeeder extends Seeder
                 'gender' => 'Male',
                 'nationality' => 'Kosovar',
                 'personal_number' => 'DEMO1002',
-                'gpa' => 7.83,
-                'credits' => 30,
             ],
         ];
 
         $students = [];
 
         foreach ($rows as $row) {
-            $userId = $this->updateOrCreateId('users', ['institution_id' => $row['institution_id']], [
-                'public_id' => $row['public_id'],
+            $userId = $this->updateOrCreateId('users', ['public_id' => $row['public_id']], [
                 'role' => 'student',
+                'institution_id' => $row['institution_id'],
                 'name' => $row['name'],
                 'email' => $row['email'],
                 'email_verified_at' => now(),
@@ -457,12 +521,6 @@ class SemsDemoSeeder extends Seeder
                 'status' => 'Active',
                 'status_label' => 'Active',
                 'year_of_study' => '2nd Year',
-                'current_semester_label' => '4th Semester',
-                'academic_year_label' => self::ACADEMIC_YEAR,
-                'current_gpa' => $row['gpa'],
-                'credits_earned' => $row['credits'],
-                'credits_required' => self::REQUIRED_CREDITS,
-                'academic_standing' => 'Good standing',
                 'phone' => $row['phone'],
                 'address' => $row['address'],
                 'date_of_birth' => $row['date_of_birth'],
@@ -491,28 +549,78 @@ class SemsDemoSeeder extends Seeder
         return $students;
     }
 
-    private function seedProfessor(int $facultyId, int $departmentId): int
+    /**
+     * @return array<int, int>
+     */
+    private function seedProfessors(int $facultyId, int $departmentId): array
     {
-        $userId = $this->updateOrCreateId('users', ['institution_id' => 'PROF-CE-100'], [
-            'public_id' => 'prof-demo-ce',
-            'role' => 'professor',
-            'name' => 'Dr. Arben Krasniqi',
-            'email' => 'arben.krasniqi@example.com',
+        $rows = [
+            [
+                'public_id' => 'prof-demo-ce',
+                'institution_id' => 'PROF-1001',
+                'name' => 'Dr. Arben Krasniqi',
+                'email' => 'arben.krasniqi@example.com',
+                'title' => 'Associate Professor',
+                'office' => 'B-301',
+                'office_hours' => 'Tue 13:00 - 15:00',
+                'consultation' => 'By appointment',
+            ],
+            [
+                'public_id' => 'prof-demo-elira',
+                'institution_id' => 'PROF-1002',
+                'name' => 'Dr. Elira Dervishi',
+                'email' => 'elira.dervishi@example.com',
+                'title' => 'Assistant Professor',
+                'office' => 'C-214',
+                'office_hours' => 'Thu 13:00 - 15:00',
+                'consultation' => 'Email for appointment',
+            ],
+        ];
+
+        $professors = [];
+
+        foreach ($rows as $row) {
+            $userId = $this->updateOrCreateId('users', ['public_id' => $row['public_id']], [
+                'role' => 'professor',
+                'institution_id' => $row['institution_id'],
+                'name' => $row['name'],
+                'email' => $row['email'],
+                'email_verified_at' => now(),
+                'password' => Hash::make('password'),
+                'faculty_id' => $facultyId,
+                'department_id' => $departmentId,
+                'avatar_url' => null,
+                'remember_token' => null,
+                'updated_at' => now(),
+                'created_at' => now(),
+            ]);
+
+            $professors[] = $this->updateOrCreateId('professors', ['user_id' => $userId], [
+                'title' => $row['title'],
+                'office' => $row['office'],
+                'office_hours' => $row['office_hours'],
+                'consultation' => $row['consultation'],
+                'updated_at' => now(),
+                'created_at' => now(),
+            ]);
+        }
+
+        return $professors;
+    }
+
+    private function seedAdmin(int $facultyId, int $departmentId): void
+    {
+        $this->updateOrCreateId('users', ['public_id' => 'admin-demo-1001'], [
+            'role' => 'admin',
+            'institution_id' => 'ADM-1001',
+            'name' => 'Demo Admin',
+            'email' => 'admin@example.com',
             'email_verified_at' => now(),
             'password' => Hash::make('password'),
             'faculty_id' => $facultyId,
             'department_id' => $departmentId,
             'avatar_url' => null,
             'remember_token' => null,
-            'updated_at' => now(),
-            'created_at' => now(),
-        ]);
-
-        return $this->updateOrCreateId('professors', ['user_id' => $userId], [
-            'title' => 'Associate Professor',
-            'office' => 'B-301',
-            'office_hours' => 'Tue 13:00 - 15:00',
-            'consultation' => 'By appointment',
             'updated_at' => now(),
             'created_at' => now(),
         ]);
@@ -530,19 +638,13 @@ class SemsDemoSeeder extends Seeder
             : ['ce-3-db' => 8, 'ce-3-os' => 7, 'ce-3-net' => 8, 'ce-3-dsa' => 8, 'ce-3-se' => 7, 'ce-3-stat' => 9];
 
         $activeScores = $student['student_key'] === 'demo-student-one'
-            ? ['ce-4-web' => 9, 'ce-4-arch' => 8, 'ce-4-ai' => 9, 'ce-4-mobile' => 8, 'ce-4-sec' => 7, 'ce-4-hci' => 10]
+            ? ['ce-4-web' => 9, 'ce-4-arch' => 8, 'ce-4-ai' => 9, 'ce-4-mobile' => 9, 'ce-4-sec' => 7, 'ce-4-hci' => 10]
             : ['ce-4-web' => 8, 'ce-4-arch' => 7, 'ce-4-ai' => 8, 'ce-4-mobile' => 7, 'ce-4-sec' => 6, 'ce-4-hci' => 9];
 
         foreach ($courses as $key => $course) {
             $isCompleted = $course['semester_code'] === 'sem-3';
             $grade = $isCompleted ? $completedGrades[$key] : $activeScores[$key];
             $attendance = $this->attendanceRateFor($student['student_key'], $key);
-
-            $deadline = DB::table('course_events')
-                ->where('course_id', $course['id'])
-                ->where('event_key', 'project-submission')
-                ->where('category', 'deadline')
-                ->first();
 
             $enrollmentId = $this->updateOrCreateId('student_enrollments', [
                 'student_id' => $student['id'],
@@ -551,10 +653,6 @@ class SemsDemoSeeder extends Seeder
             ], [
                 'status' => $isCompleted ? 'completed' : 'active',
                 'status_label' => $isCompleted ? 'Completed' : 'Active',
-                'current_grade' => $isCompleted ? $this->gradeLabel($grade) : $this->gradeLabel($grade).' projected',
-                'current_grade_points' => $grade,
-                'attendance_percentage' => $attendance,
-                'next_important_event_id' => $isCompleted ? null : $deadline?->id,
                 'enrolled_on' => $isCompleted ? '2025-10-01' : '2026-02-17',
                 'updated_at' => now(),
                 'created_at' => now(),
@@ -562,53 +660,23 @@ class SemsDemoSeeder extends Seeder
 
             $this->seedEnrollmentGrades($enrollmentId, $isCompleted, $grade);
             $this->seedCourseAttendance($enrollmentId, $isCompleted, $attendance);
-
-            if ($isCompleted) {
-                $this->updateOrCreateId('transcript_course_grades', [
-                    'student_id' => $student['id'],
-                    'course_id' => $course['id'],
-                    'semester_code' => 'sem-3',
-                ], [
-                    'numeric_grade' => $grade,
-                    'grade_points' => $grade,
-                    'status' => $grade >= 6 ? 'passed' : 'failed',
-                    'status_label' => $grade >= 6 ? 'Passed' : 'Failed',
-                    'updated_at' => now(),
-                    'created_at' => now(),
-                ]);
-            } else {
-                $this->updateOrCreateId('transcript_course_grades', [
-                    'student_id' => $student['id'],
-                    'course_id' => $course['id'],
-                    'semester_code' => 'sem-4',
-                ], [
-                    'numeric_grade' => $grade,
-                    'grade_points' => $grade,
-                    'status' => 'in-progress',
-                    'status_label' => 'In progress',
-                    'updated_at' => now(),
-                    'created_at' => now(),
-                ]);
-            }
         }
 
-        $this->seedTranscriptSummary($student, $completedGrades);
         $this->seedAttendancePage($student, $courses, $semesters);
-        $this->seedDashboard($student, $courses, $activeScores);
     }
 
     private function seedEnrollmentGrades(int $enrollmentId, bool $isCompleted, int $grade): void
     {
         $records = $isCompleted
             ? [
-                ['key' => 'midterm', 'title' => 'Midterm Exam', 'type' => 'Exam', 'score' => max(6, $grade - 1).'/10', 'weight' => '30%', 'date' => '2025-11-20', 'status' => 'Graded'],
-                ['key' => 'assignments', 'title' => 'Assignments Portfolio', 'type' => 'Assignments', 'score' => $grade.'/10', 'weight' => '30%', 'date' => '2025-12-16', 'status' => 'Graded'],
-                ['key' => 'final', 'title' => 'Final Exam', 'type' => 'Exam', 'score' => $grade.'/10', 'weight' => '40%', 'date' => '2026-01-20', 'status' => 'Final'],
+                ['key' => 'midterm', 'title' => 'Midterm Exam', 'type' => 'Exam', 'grade' => $grade, 'weight' => 30, 'date' => '2025-11-20', 'status' => 'Graded'],
+                ['key' => 'assignments', 'title' => 'Assignments Portfolio', 'type' => 'Assignments', 'grade' => $grade, 'weight' => 30, 'date' => '2025-12-16', 'status' => 'Graded'],
+                ['key' => 'final', 'title' => 'Final Exam', 'type' => 'Exam', 'grade' => $grade, 'weight' => 40, 'date' => '2026-01-20', 'status' => 'Final'],
             ]
             : [
-                ['key' => 'quiz-1', 'title' => 'Quiz 1', 'type' => 'Quiz', 'score' => max(6, $grade - 1).'/10', 'weight' => '10%', 'date' => '2026-03-18', 'status' => 'Graded'],
-                ['key' => 'assignment-1', 'title' => 'Assignment 1', 'type' => 'Assignment', 'score' => $grade.'/10', 'weight' => '15%', 'date' => '2026-04-10', 'status' => 'Graded'],
-                ['key' => 'midterm', 'title' => 'Midterm Exam', 'type' => 'Exam', 'score' => $grade.'/10', 'weight' => '30%', 'date' => '2026-04-29', 'status' => 'Graded'],
+                ['key' => 'quiz-1', 'title' => 'Quiz 1', 'type' => 'Quiz', 'grade' => $grade, 'weight' => 10, 'date' => '2026-03-18', 'status' => 'Graded'],
+                ['key' => 'assignment-1', 'title' => 'Assignment 1', 'type' => 'Assignment', 'grade' => $grade, 'weight' => 15, 'date' => '2026-04-10', 'status' => 'Graded'],
+                ['key' => 'midterm', 'title' => 'Midterm Exam', 'type' => 'Exam', 'grade' => $grade, 'weight' => 30, 'date' => '2026-04-29', 'status' => 'Graded'],
             ];
 
         foreach ($records as $record) {
@@ -618,8 +686,10 @@ class SemsDemoSeeder extends Seeder
             ], [
                 'title' => $record['title'],
                 'type' => $record['type'],
-                'score' => $record['score'],
-                'weight_label' => $record['weight'],
+                'score' => null,
+                'grade' => $record['grade'],
+                'weight' => $record['weight'],
+                'weight_label' => null,
                 'graded_on' => $record['date'],
                 'date_label' => date('M j, Y', strtotime($record['date'])),
                 'status' => $record['status'],
@@ -631,28 +701,20 @@ class SemsDemoSeeder extends Seeder
 
     private function seedCourseAttendance(int $enrollmentId, bool $isCompleted, int $attendance): void
     {
-        $sessionsHeld = $isCompleted ? 18 : 12;
+        $sessionsHeld = 100;
         $sessionsAttended = (int) round($sessionsHeld * $attendance / 100);
+        $lateRecords = min(3, max(0, $sessionsAttended - 1), $attendance < 90 ? 2 : 0);
+        $presentRecords = $sessionsAttended - $lateRecords;
+        $baseDate = $isCompleted ? '2025-10-13' : '2026-02-15';
 
-        $this->updateOrCreateId('course_attendance_summaries', [
-            'student_enrollment_id' => $enrollmentId,
-        ], [
-            'required_percentage' => 75,
-            'sessions_held' => $sessionsHeld,
-            'sessions_attended' => $sessionsAttended,
-            'status' => $attendance >= 75 ? 'On track' : 'Needs attention',
-            'summary_items' => json_encode([
-                ['label' => 'Present', 'value' => $sessionsAttended],
-                ['label' => 'Missed', 'value' => $sessionsHeld - $sessionsAttended],
-            ]),
-            'updated_at' => now(),
-            'created_at' => now(),
-        ]);
+        foreach (range(0, $sessionsHeld - 1) as $index) {
+            $date = date('Y-m-d', strtotime($baseDate.' +'.$index.' days'));
+            $status = match (true) {
+                $index < $presentRecords => 'present',
+                $index < $sessionsAttended => 'late',
+                default => 'absent',
+            };
 
-        $baseDate = $isCompleted ? '2025-11-03' : '2026-03-02';
-        foreach (range(0, 2) as $index) {
-            $date = date('Y-m-d', strtotime($baseDate.' +'.($index * 7).' days'));
-            $status = $index === 2 && $attendance < 85 ? 'absent' : ($index === 1 && $attendance < 90 ? 'late' : 'present');
             $this->updateOrCreateId('course_attendance_records', [
                 'student_enrollment_id' => $enrollmentId,
                 'record_key' => 'demo-'.$index,
@@ -675,31 +737,13 @@ class SemsDemoSeeder extends Seeder
      */
     private function seedAttendancePage(array $student, array $courses, array $semesters): void
     {
-        $weekId = $this->updateOrCreateId('attendance_weeks', [
-            'student_id' => $student['id'],
-            'starts_on' => '2026-05-25',
-            'ends_on' => '2026-05-29',
-        ], [
-            'semester_id' => $semesters['sem-4'],
-            'label' => 'May 25 - May 29, 2026',
-            'updated_at' => now(),
-            'created_at' => now(),
-        ]);
-
         $activeCourses = array_values(array_filter($courses, fn (array $course): bool => $course['semester_code'] === 'sem-4'));
         $historyStatuses = ['present', 'late', 'present', 'absent', 'present', 'present', 'late', 'present', 'absent', 'present', 'present', 'present'];
         $historyDates = ['2026-03-02', '2026-03-04', '2026-03-09', '2026-03-12', '2026-03-16', '2026-03-19', '2026-03-23', '2026-03-26', '2026-04-02', '2026-04-09', '2026-04-16', '2026-04-23'];
 
-        $present = 0;
-        $late = 0;
-        $absent = 0;
-
         foreach ($historyStatuses as $index => $status) {
             $course = $activeCourses[$index % count($activeCourses)];
             $date = $historyDates[$index];
-            $present += $status === 'present' ? 1 : 0;
-            $late += $status === 'late' ? 1 : 0;
-            $absent += $status === 'absent' ? 1 : 0;
 
             $this->updateOrCreateId('attendance_history_records', [
                 'student_id' => $student['id'],
@@ -713,270 +757,6 @@ class SemsDemoSeeder extends Seeder
                 'professor_name' => 'Dr. Arben Krasniqi',
                 'result' => $status,
                 'result_label' => ucfirst($status),
-                'updated_at' => now(),
-                'created_at' => now(),
-            ]);
-        }
-
-        $total = count($historyStatuses);
-        $overall = (int) round((($present + $late) / $total) * 100);
-
-        $this->updateOrCreateId('attendance_summaries', [
-            'student_id' => $student['id'],
-            'course_id' => null,
-            'semester_id' => $semesters['sem-4'],
-        ], [
-            'overall_attendance' => $overall,
-            'present_sessions' => $present + $late,
-            'total_sessions' => $total,
-            'absences' => $absent,
-            'late_records' => $late,
-            'comparison_value' => 3,
-            'comparison_direction' => 'up',
-            'comparison_label' => '3% higher than previous 4 weeks',
-            'updated_at' => now(),
-            'created_at' => now(),
-        ]);
-
-        foreach ($activeCourses as $course) {
-            $rate = $this->attendanceRateFor($student['student_key'], $course['key']);
-            $this->updateOrCreateId('attendance_summaries', [
-                'student_id' => $student['id'],
-                'course_id' => $course['id'],
-                'semester_id' => $semesters['sem-4'],
-            ], [
-                'overall_attendance' => $rate,
-                'present_sessions' => (int) round($rate / 10),
-                'total_sessions' => 10,
-                'absences' => max(0, 10 - (int) round($rate / 10)),
-                'late_records' => $rate < 90 ? 1 : 0,
-                'comparison_value' => 0,
-                'comparison_direction' => 'flat',
-                'comparison_label' => 'Stable',
-                'updated_at' => now(),
-                'created_at' => now(),
-            ]);
-
-            $this->updateOrCreateId('attendance_last_recorded', [
-                'student_id' => $student['id'],
-                'course_id' => $course['id'],
-            ], [
-                'recorded_on' => '2026-05-21',
-                'date_label' => 'May 21, 2026',
-                'time_label' => substr($course['starts_at'], 0, 5),
-                'status' => 'recorded',
-                'status_label' => 'Recorded',
-                'updated_at' => now(),
-                'created_at' => now(),
-            ]);
-        }
-
-        foreach ([
-            ['date' => '2026-05-25', 'name' => 'Monday', 'short' => 'Mon'],
-            ['date' => '2026-05-26', 'name' => 'Tuesday', 'short' => 'Tue'],
-            ['date' => '2026-05-27', 'name' => 'Wednesday', 'short' => 'Wed'],
-            ['date' => '2026-05-28', 'name' => 'Thursday', 'short' => 'Thu'],
-            ['date' => '2026-05-29', 'name' => 'Friday', 'short' => 'Fri'],
-        ] as $day) {
-            $dayId = $this->updateOrCreateId('attendance_schedule_days', [
-                'attendance_week_id' => $weekId,
-                'day_on' => $day['date'],
-            ], [
-                'day_name' => $day['name'],
-                'day_short' => $day['short'],
-                'date_label' => date('M j', strtotime($day['date'])),
-                'is_today' => $day['date'] === '2026-05-26',
-                'updated_at' => now(),
-                'created_at' => now(),
-            ]);
-
-            foreach ($activeCourses as $course) {
-                if (! in_array($day['name'], $course['days'], true)) {
-                    continue;
-                }
-
-                $status = $day['date'] < '2026-05-26' ? 'present' : 'scheduled';
-                $this->updateOrCreateId('attendance_schedule_blocks', [
-                    'attendance_schedule_day_id' => $dayId,
-                    'course_id' => $course['id'],
-                    'block_key' => 'demo-'.$course['key'],
-                ], [
-                    'time_label' => substr($course['starts_at'], 0, 5).' - '.substr($course['ends_at'], 0, 5),
-                    'starts_at' => $course['starts_at'],
-                    'ends_at' => $course['ends_at'],
-                    'room' => $course['room'],
-                    'type' => 'Lecture',
-                    'status' => $status,
-                    'status_label' => ucfirst($status),
-                    'tone' => $status === 'scheduled' ? 'blue' : 'green',
-                    'updated_at' => now(),
-                    'created_at' => now(),
-                ]);
-            }
-        }
-    }
-
-    /**
-     * @param  array<string, mixed>  $student
-     * @param  array<string, int>  $completedGrades
-     */
-    private function seedTranscriptSummary(array $student, array $completedGrades): void
-    {
-        foreach ([
-            ['code' => 'sem-3', 'label' => '3rd Semester', 'default' => false],
-            ['code' => 'sem-4', 'label' => '4th Semester', 'default' => true],
-        ] as $option) {
-            $this->updateOrCreateId('transcript_semester_options', [
-                'student_id' => $student['id'],
-                'semester_code' => $option['code'],
-            ], [
-                'label' => $option['label'],
-                'is_default' => $option['default'],
-                'updated_at' => now(),
-                'created_at' => now(),
-            ]);
-        }
-
-        $average = round(array_sum($completedGrades) / count($completedGrades), 2);
-        $this->updateOrCreateId('transcript_summaries', ['student_id' => $student['id']], [
-            'academic_year' => self::ACADEMIC_YEAR,
-            'average_grade' => $average,
-            'grade_status' => 'Good academic progress',
-            'total_credits_earned' => 30,
-            'required_credits' => self::REQUIRED_CREDITS,
-            'courses_completed' => 6,
-            'completion_percentage' => 17,
-            'academic_standing' => 'Good standing',
-            'eligibility_status' => 'Eligible to continue',
-            'transcript_action_label' => 'Download unofficial transcript',
-            'transcript_action_status' => 'available',
-            'updated_at' => now(),
-            'created_at' => now(),
-        ]);
-
-        $counts = array_count_values($completedGrades);
-        foreach ([10, 9, 8, 7, 6, 5] as $grade) {
-            $count = (int) ($counts[$grade] ?? 0);
-            $this->updateOrCreateId('grade_distributions', [
-                'student_id' => $student['id'],
-                'grade' => $grade,
-            ], [
-                'label' => $this->gradeLabel($grade),
-                'count' => $count,
-                'percentage' => (int) round(($count / count($completedGrades)) * 100),
-                'updated_at' => now(),
-                'created_at' => now(),
-            ]);
-        }
-    }
-
-    /**
-     * @param  array<string, mixed>  $student
-     * @param  array<string, array<string, mixed>>  $courses
-     * @param  array<string, int>  $activeScores
-     */
-    private function seedDashboard(array $student, array $courses, array $activeScores): void
-    {
-        $activeCourses = array_values(array_filter($courses, fn (array $course): bool => $course['semester_code'] === 'sem-4'));
-
-        foreach ([
-            ['key' => 'gpa', 'label' => 'Current GPA', 'value' => number_format((float) $student['gpa'], 2), 'helper' => 'After 3rd Semester', 'tone' => 'blue', 'sort' => 1],
-            ['key' => 'credits', 'label' => 'Credits Earned', 'value' => '30 / 180', 'helper' => '6 completed courses', 'tone' => 'green', 'sort' => 2],
-            ['key' => 'active-courses', 'label' => 'Active Courses', 'value' => '6', 'helper' => '4th Semester', 'tone' => 'purple', 'sort' => 3],
-            ['key' => 'attendance', 'label' => 'Attendance', 'value' => '86%', 'helper' => 'Current semester average', 'tone' => 'orange', 'sort' => 4],
-        ] as $metric) {
-            $this->updateOrCreateId('student_dashboard_metrics', [
-                'student_id' => $student['id'],
-                'metric_key' => $metric['key'],
-            ], [
-                'label' => $metric['label'],
-                'value' => $metric['value'],
-                'helper' => $metric['helper'],
-                'tone' => $metric['tone'],
-                'sort_order' => $metric['sort'],
-                'updated_at' => now(),
-                'created_at' => now(),
-            ]);
-        }
-
-        foreach (array_slice($activeCourses, 0, 3) as $index => $course) {
-            $this->updateOrCreateId('student_dashboard_classes', [
-                'student_id' => $student['id'],
-                'class_key' => 'today-'.$course['key'],
-            ], [
-                'course_id' => $course['id'],
-                'time_label' => substr($course['starts_at'], 0, 5).' - '.substr($course['ends_at'], 0, 5),
-                'course_code' => $course['code'],
-                'course_name' => $course['name'],
-                'room' => $course['room'],
-                'type' => 'Lecture',
-                'tone' => ['blue', 'green', 'purple'][$index],
-                'sort_order' => $index + 1,
-                'updated_at' => now(),
-                'created_at' => now(),
-            ]);
-        }
-
-        foreach (array_slice($activeCourses, 0, 4) as $index => $course) {
-            $this->updateOrCreateId('student_dashboard_deadlines', [
-                'student_id' => $student['id'],
-                'deadline_key' => 'project-'.$course['key'],
-            ], [
-                'course_id' => $course['id'],
-                'title' => 'Project submission',
-                'course_code' => $course['code'],
-                'date_label' => 'May 29, 2026',
-                'status_label' => $index === 0 ? 'Due soon' : 'Upcoming',
-                'tone' => $index === 0 ? 'orange' : 'blue',
-                'sort_order' => $index + 1,
-                'updated_at' => now(),
-                'created_at' => now(),
-            ]);
-        }
-
-        foreach (array_slice($activeCourses, 0, 4) as $index => $course) {
-            $score = $activeScores[$course['key']];
-            $this->updateOrCreateId('student_dashboard_latest_grades', [
-                'student_id' => $student['id'],
-                'grade_key' => 'midterm-'.$course['key'],
-            ], [
-                'course_id' => $course['id'],
-                'course' => $course['code'],
-                'assessment' => 'Midterm Exam',
-                'type' => 'Exam',
-                'grade' => $this->gradeLabel($score),
-                'date_label' => 'Apr 29, 2026',
-                'tone' => $score >= 8 ? 'green' : 'orange',
-                'sort_order' => $index + 1,
-                'updated_at' => now(),
-                'created_at' => now(),
-            ]);
-        }
-
-        $warningCourse = $courses['ce-4-sec'];
-        $rate = $this->attendanceRateFor($student['student_key'], 'ce-4-sec');
-        $this->updateOrCreateId('student_dashboard_attendance_warnings', ['student_id' => $student['id']], [
-            'course_id' => $warningCourse['id'],
-            'course_code' => $warningCourse['code'],
-            'course_name' => $warningCourse['name'],
-            'rate' => $rate,
-            'required_rate' => 75,
-            'message' => $rate < 75 ? 'Attendance below requirement' : 'Attendance close to requirement',
-            'detail' => $rate < 75
-                ? 'Attend the next sessions to recover the required minimum.'
-                : 'Keep attending regularly to stay above the required minimum.',
-            'updated_at' => now(),
-            'created_at' => now(),
-        ]);
-
-        foreach ($activeCourses as $index => $course) {
-            $this->updateOrCreateId('student_dashboard_attendance_summaries', [
-                'student_id' => $student['id'],
-                'course_id' => $course['id'],
-            ], [
-                'course_name' => $course['code'],
-                'rate' => $this->attendanceRateFor($student['student_key'], $course['key']),
-                'sort_order' => $index + 1,
                 'updated_at' => now(),
                 'created_at' => now(),
             ]);

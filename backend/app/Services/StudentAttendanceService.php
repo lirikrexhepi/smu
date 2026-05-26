@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\DB;
 
 final class StudentAttendanceService
 {
+    public function __construct(private readonly StudentAcademicRecordsService $records) {}
+
     /**
      * @return array<string, mixed>
      */
@@ -22,26 +24,26 @@ final class StudentAttendanceService
             return $this->emptyResponse($user);
         }
 
-        $semester = $this->resolveSemester($student->id, (string) $request->query('semester', ''));
-        $course = $this->resolveCourse($student->id, (string) $request->query('courseId', ''), $semester?->id);
-        $week = $this->resolveWeek($student->id, $semester?->id, (string) $request->query('week', ''));
+        $semester = $this->resolveSemester((int) $student->id, (string) $request->query('semester', ''));
+        $course = $this->resolveCourse((int) $student->id, (string) $request->query('courseId', ''), $semester?->id);
+        $week = $this->resolveWeek((string) $request->query('week', ''));
 
         return [
             'studentKey' => (string) ($user?->public_id ?? $student->student_key ?? ''),
-            'semester' => (string) ($student->current_semester_label ?? $semester?->name ?? ''),
-            'academicYear' => (string) ($student->academic_year_label ?? $semester?->academic_year_name ?? ''),
+            'semester' => (string) ($semester?->name ?? ''),
+            'academicYear' => (string) ($semester?->academic_year_name ?? ''),
             'selectedCourseId' => $course === null ? null : (string) $course->course_key,
             'selectedSemester' => (string) ($semester?->name ?? ''),
-            'selectedWeek' => (string) ($request->query('week', '') ?: ($week?->starts_on ?? '')),
+            'selectedWeek' => (string) ($request->query('week', '') ?: $week->starts_on),
             'filters' => [
-                'courses' => $this->courseOptions($student->id, $semester?->id),
-                'semesters' => $this->semesterOptions($student->id),
+                'courses' => $this->courseOptions((int) $student->id, $semester?->id),
+                'semesters' => $this->semesterOptions((int) $student->id),
             ],
             'week' => $this->weekPayload($week, (string) $request->query('week', '')),
-            'summary' => $this->summary($student->id, $course?->id, $semester?->id),
-            'lastRecorded' => $this->lastRecorded($student->id, $course?->id, $semester?->id),
-            'weeklySchedule' => $week === null ? [] : $this->weeklySchedule($student->id, $week, $course?->id, $semester?->id),
-            'history' => $this->history($student->id, $course?->id, $semester?->id),
+            'summary' => $this->summary((int) $student->id, $course?->id, $semester?->id),
+            'lastRecorded' => $this->lastRecorded((int) $student->id, $course?->id, $semester?->id),
+            'weeklySchedule' => $this->weeklySchedule((int) $student->id, $week, $course?->id, $semester?->id),
+            'history' => $this->history((int) $student->id, $course?->id, $semester?->id),
         ];
     }
 
@@ -53,6 +55,7 @@ final class StudentAttendanceService
             ->join('semesters', 'semesters.id', '=', 'student_enrollments.semester_id')
             ->leftJoin('academic_years', 'academic_years.id', '=', 'semesters.academic_year_id')
             ->where('student_enrollments.student_id', $studentId)
+            ->where('student_enrollments.status', '!=', 'dropped')
             ->select('semesters.*', 'academic_years.name as academic_year_name')
             ->distinct();
 
@@ -87,6 +90,7 @@ final class StudentAttendanceService
         return DB::table('student_enrollments')
             ->join('courses', 'courses.id', '=', 'student_enrollments.course_id')
             ->where('student_enrollments.student_id', $studentId)
+            ->where('student_enrollments.status', '!=', 'dropped')
             ->when($semesterId !== null, fn ($query) => $query->where('student_enrollments.semester_id', $semesterId))
             ->where(function ($query) use ($requested): void {
                 $query->where('courses.course_key', $requested)
@@ -100,39 +104,16 @@ final class StudentAttendanceService
             ->first();
     }
 
-    private function resolveWeek(int $studentId, ?int $semesterId, string $requested): ?object
+    private function resolveWeek(string $requested): object
     {
-        $requestedDate = $this->requestedWeekDate($requested);
-        $baseQuery = DB::table('attendance_weeks')
-            ->where('student_id', $studentId)
-            ->when($semesterId !== null, fn ($query) => $query->where('semester_id', $semesterId));
+        $date = $this->requestedWeekDate($requested) ?? Carbon::today();
+        $start = $date->copy()->startOfWeek(Carbon::MONDAY);
 
-        if ($requestedDate !== null) {
-            $week = (clone $baseQuery)
-                ->where('starts_on', '<=', $requestedDate->toDateString())
-                ->where('ends_on', '>=', $requestedDate->toDateString())
-                ->orderByDesc('starts_on')
-                ->first();
-
-            if ($week !== null) {
-                return $week;
-            }
-        }
-
-        $today = Carbon::today();
-        $currentWeek = (clone $baseQuery)
-            ->where('starts_on', '<=', $today->toDateString())
-            ->where('ends_on', '>=', $today->toDateString())
-            ->orderByDesc('starts_on')
-            ->first();
-
-        if ($currentWeek !== null) {
-            return $currentWeek;
-        }
-
-        return $baseQuery
-            ->orderByDesc('starts_on')
-            ->first();
+        return (object) [
+            'starts_on' => $start->toDateString(),
+            'ends_on' => $start->copy()->addDays(4)->toDateString(),
+            'label' => $this->weekLabel($start->toDateString(), $start->copy()->addDays(4)->toDateString()),
+        ];
     }
 
     private function requestedWeekDate(string $requested): ?Carbon
@@ -158,6 +139,7 @@ final class StudentAttendanceService
         return DB::table('student_enrollments')
             ->join('semesters', 'semesters.id', '=', 'student_enrollments.semester_id')
             ->where('student_enrollments.student_id', $studentId)
+            ->where('student_enrollments.status', '!=', 'dropped')
             ->select('semesters.name', 'semesters.is_current', 'semesters.number', 'semesters.id')
             ->distinct()
             ->orderByDesc('semesters.is_current')
@@ -193,21 +175,12 @@ final class StudentAttendanceService
     /**
      * @return array<string, string|null>
      */
-    private function weekPayload(?object $week, string $requested): array
+    private function weekPayload(object $week, string $requested): array
     {
-        if ($week === null) {
-            return [
-                'startDate' => '',
-                'endDate' => '',
-                'label' => '',
-                'requestedDate' => $requested !== '' ? $requested : null,
-            ];
-        }
-
         return [
             'startDate' => (string) $week->starts_on,
             'endDate' => (string) $week->ends_on,
-            'label' => (string) ($week->label ?: $this->weekLabel($week->starts_on, $week->ends_on)),
+            'label' => (string) $week->label,
             'requestedDate' => $requested !== '' ? $requested : null,
         ];
     }
@@ -217,21 +190,9 @@ final class StudentAttendanceService
      */
     private function summary(int $studentId, ?int $courseId, ?int $semesterId): array
     {
-        $summary = DB::table('attendance_summaries')
-            ->where('student_id', $studentId)
-            ->where('course_id', $courseId)
-            ->when($semesterId !== null, fn ($query) => $query->where('semester_id', $semesterId))
-            ->when($semesterId === null, fn ($query) => $query->whereNull('semester_id'))
-            ->first();
+        $summary = $this->attendanceAggregate($studentId, $courseId, $semesterId);
 
-        if ($summary === null && $semesterId !== null) {
-            $summary = DB::table('attendance_summaries')
-                ->where('student_id', $studentId)
-                ->where('course_id', $courseId)
-                ->first();
-        }
-
-        if ($summary === null) {
+        if ($summary === null || (int) $summary->total_sessions === 0) {
             return $this->emptySummary();
         }
 
@@ -240,19 +201,37 @@ final class StudentAttendanceService
         $lateRecords = (int) $summary->late_records;
 
         return [
-            'overallAttendance' => (int) $summary->overall_attendance,
-            'presentSessions' => (int) $summary->present_sessions,
+            'overallAttendance' => (int) $summary->attendance_percentage,
+            'presentSessions' => (int) $summary->sessions_attended,
             'totalSessions' => $totalSessions,
             'absences' => $absences,
             'lateRecords' => $lateRecords,
             'absenceRate' => $totalSessions > 0 ? (int) round(($absences / $totalSessions) * 100) : 0,
             'lateRate' => $totalSessions > 0 ? (int) round(($lateRecords / $totalSessions) * 100) : 0,
             'comparisonVsLast4Weeks' => [
-                'value' => abs((int) $summary->comparison_value),
-                'direction' => $this->comparisonDirection($summary->comparison_direction),
-                'label' => (string) ($summary->comparison_label ?: 'vs previous 4 weeks'),
+                'value' => 0,
+                'direction' => 'flat',
+                'label' => 'Calculated from attendance records',
             ],
         ];
+    }
+
+    private function attendanceAggregate(int $studentId, ?int $courseId, ?int $semesterId): ?object
+    {
+        return DB::table('course_attendance_records')
+            ->join('student_enrollments', 'student_enrollments.id', '=', 'course_attendance_records.student_enrollment_id')
+            ->join('courses', 'courses.id', '=', 'student_enrollments.course_id')
+            ->where('student_enrollments.student_id', $studentId)
+            ->where('student_enrollments.status', '!=', 'dropped')
+            ->whereIn('course_attendance_records.status', ['present', 'absent', 'late', 'recorded'])
+            ->when($courseId !== null, fn ($query) => $query->where('student_enrollments.course_id', $courseId))
+            ->when($semesterId !== null, fn ($query) => $query->where('student_enrollments.semester_id', $semesterId))
+            ->selectRaw('COUNT(*) as total_sessions')
+            ->selectRaw("SUM(CASE WHEN course_attendance_records.status in ('present', 'late', 'recorded') THEN 1 ELSE 0 END) as sessions_attended")
+            ->selectRaw("SUM(CASE WHEN course_attendance_records.status = 'absent' THEN 1 ELSE 0 END) as absences")
+            ->selectRaw("SUM(CASE WHEN course_attendance_records.status = 'late' THEN 1 ELSE 0 END) as late_records")
+            ->selectRaw("ROUND((SUM(CASE WHEN course_attendance_records.status in ('present', 'late', 'recorded') THEN 1 ELSE 0 END) * 100.0) / NULLIF(COUNT(*), 0)) as attendance_percentage")
+            ->first();
     }
 
     /**
@@ -260,16 +239,17 @@ final class StudentAttendanceService
      */
     private function lastRecorded(int $studentId, ?int $courseId, ?int $semesterId): ?array
     {
-        $record = DB::table('attendance_last_recorded')
-            ->join('courses', 'courses.id', '=', 'attendance_last_recorded.course_id')
-            ->where('attendance_last_recorded.student_id', $studentId)
-            ->when($courseId !== null, fn ($query) => $query->where('attendance_last_recorded.course_id', $courseId))
-            ->when($semesterId !== null, fn ($query) => $query->where('courses.semester_id', $semesterId))
-            ->orderByDesc('attendance_last_recorded.recorded_on')
-            ->orderByDesc('attendance_last_recorded.time_label')
-            ->orderByDesc('attendance_last_recorded.id')
+        $record = DB::table('course_attendance_records')
+            ->join('student_enrollments', 'student_enrollments.id', '=', 'course_attendance_records.student_enrollment_id')
+            ->join('courses', 'courses.id', '=', 'student_enrollments.course_id')
+            ->where('student_enrollments.student_id', $studentId)
+            ->whereIn('course_attendance_records.status', ['present', 'absent', 'late', 'recorded'])
+            ->when($courseId !== null, fn ($query) => $query->where('student_enrollments.course_id', $courseId))
+            ->when($semesterId !== null, fn ($query) => $query->where('student_enrollments.semester_id', $semesterId))
+            ->orderByDesc('course_attendance_records.held_on')
+            ->orderByDesc('course_attendance_records.id')
             ->select(
-                'attendance_last_recorded.*',
+                'course_attendance_records.*',
                 'courses.course_key',
                 'courses.code as course_code',
                 'courses.name as course_name',
@@ -284,11 +264,11 @@ final class StudentAttendanceService
             'courseId' => (string) $record->course_key,
             'courseCode' => (string) $record->course_code,
             'courseName' => (string) $record->course_name,
-            'date' => (string) ($record->recorded_on ?? ''),
-            'dateLabel' => (string) ($record->date_label ?: $this->dateLabel($record->recorded_on)),
-            'time' => (string) ($record->time_label ?? ''),
-            'status' => (string) $record->status,
-            'statusLabel' => (string) ($record->status_label ?: ucfirst((string) $record->status)),
+            'date' => (string) ($record->held_on ?? ''),
+            'dateLabel' => (string) ($record->date_label ?: $this->dateLabel($record->held_on)),
+            'time' => '',
+            'status' => 'recorded',
+            'statusLabel' => 'Recorded',
         ];
     }
 
@@ -298,18 +278,14 @@ final class StudentAttendanceService
     private function weeklySchedule(int $studentId, object $week, ?int $courseId, ?int $semesterId): array
     {
         $days = $this->scheduleDays($week);
-        $blocks = $this->storedScheduleBlocks($days->pluck('id')->filter()->all(), $courseId);
-
-        if ($blocks->isEmpty()) {
-            $blocks = $this->derivedScheduleBlocks($studentId, $week, $courseId, $semesterId);
-        }
+        $blocks = $this->derivedScheduleBlocks($studentId, $week, $courseId, $semesterId);
 
         return $days
             ->map(fn (object $day): array => [
                 'date' => (string) $day->day_on,
-                'dayName' => (string) ($day->day_name ?: Carbon::parse($day->day_on)->format('l')),
-                'dayShort' => (string) ($day->day_short ?: Carbon::parse($day->day_on)->format('D')),
-                'dateLabel' => (string) ($day->date_label ?: Carbon::parse($day->day_on)->format('M j')),
+                'dayName' => (string) $day->day_name,
+                'dayShort' => (string) $day->day_short,
+                'dateLabel' => (string) $day->date_label,
                 'isToday' => Carbon::parse($day->day_on)->isSameDay(Carbon::today()),
                 'blocks' => $blocks
                     ->where('day_on', (string) $day->day_on)
@@ -324,22 +300,12 @@ final class StudentAttendanceService
 
     private function scheduleDays(object $week): Collection
     {
-        $stored = DB::table('attendance_schedule_days')
-            ->where('attendance_week_id', $week->id)
-            ->orderBy('day_on')
-            ->get();
-
-        if ($stored->isNotEmpty()) {
-            return $stored;
-        }
-
         $days = collect();
         $day = Carbon::parse($week->starts_on)->startOfDay();
         $end = Carbon::parse($week->ends_on)->startOfDay();
 
         while ($day->lte($end)) {
             $days->push((object) [
-                'id' => null,
                 'day_on' => $day->toDateString(),
                 'day_name' => $day->format('l'),
                 'day_short' => $day->format('D'),
@@ -349,45 +315,6 @@ final class StudentAttendanceService
         }
 
         return $days;
-    }
-
-    /**
-     * @param  array<int, int>  $dayIds
-     */
-    private function storedScheduleBlocks(array $dayIds, ?int $courseId): Collection
-    {
-        if ($dayIds === []) {
-            return collect();
-        }
-
-        return DB::table('attendance_schedule_blocks')
-            ->join('attendance_schedule_days', 'attendance_schedule_days.id', '=', 'attendance_schedule_blocks.attendance_schedule_day_id')
-            ->join('courses', 'courses.id', '=', 'attendance_schedule_blocks.course_id')
-            ->leftJoin('course_professor', function ($join): void {
-                $join->on('course_professor.course_id', '=', 'courses.id')
-                    ->where('course_professor.role', '=', 'instructor');
-            })
-            ->leftJoin('professors', 'professors.id', '=', 'course_professor.professor_id')
-            ->leftJoin('users as professor_users', 'professor_users.id', '=', 'professors.user_id')
-            ->whereIn('attendance_schedule_blocks.attendance_schedule_day_id', $dayIds)
-            ->when($courseId !== null, fn ($query) => $query->where('attendance_schedule_blocks.course_id', $courseId))
-            ->select(
-                'attendance_schedule_blocks.id',
-                'attendance_schedule_days.day_on',
-                'courses.course_key',
-                'courses.code as course_code',
-                'courses.name as course_name',
-                'professor_users.name as professor_name',
-                'attendance_schedule_blocks.time_label',
-                'attendance_schedule_blocks.starts_at',
-                'attendance_schedule_blocks.ends_at',
-                'attendance_schedule_blocks.room',
-                'attendance_schedule_blocks.type',
-                'attendance_schedule_blocks.status',
-                'attendance_schedule_blocks.status_label',
-                'attendance_schedule_blocks.tone',
-            )
-            ->get();
     }
 
     private function derivedScheduleBlocks(int $studentId, object $week, ?int $courseId, ?int $semesterId): Collection
@@ -406,7 +333,7 @@ final class StudentAttendanceService
             ->when($courseId !== null, fn ($query) => $query->where('courses.id', $courseId))
             ->when($semesterId !== null, fn ($query) => $query->where('student_enrollments.semester_id', $semesterId))
             ->select(
-                'courses.id as course_id',
+                'student_enrollments.id as enrollment_id',
                 'courses.course_key',
                 'courses.code as course_code',
                 'courses.name as course_name',
@@ -420,6 +347,12 @@ final class StudentAttendanceService
             )
             ->get();
 
+        $records = DB::table('course_attendance_records')
+            ->whereIn('student_enrollment_id', $schedules->pluck('enrollment_id')->all())
+            ->whereBetween('held_on', [$week->starts_on, $week->ends_on])
+            ->get()
+            ->keyBy(fn (object $record): string => $record->student_enrollment_id.'|'.$record->held_on);
+
         $blocks = collect();
         $day = Carbon::parse($week->starts_on)->startOfDay();
         $end = Carbon::parse($week->ends_on)->startOfDay();
@@ -428,11 +361,12 @@ final class StudentAttendanceService
             $dayName = $day->format('l');
 
             foreach ($schedules as $schedule) {
-                $scheduleDays = $this->jsonArray($schedule->days);
-
-                if (! in_array($dayName, $scheduleDays, true)) {
+                if (! in_array($dayName, $this->jsonArray($schedule->days), true)) {
                     continue;
                 }
+
+                $record = $records->get($schedule->enrollment_id.'|'.$day->toDateString());
+                $status = (string) ($record?->status ?? 'scheduled');
 
                 $blocks->push((object) [
                     'id' => 'derived-'.$day->toDateString().'-'.$schedule->course_key,
@@ -446,9 +380,9 @@ final class StudentAttendanceService
                     'ends_at' => $schedule->ends_at,
                     'room' => $schedule->room,
                     'type' => $schedule->type ?: 'Lecture',
-                    'status' => 'scheduled',
-                    'status_label' => 'Scheduled',
-                    'tone' => 'blue',
+                    'status' => $status,
+                    'status_label' => (string) ($record?->status_label ?: ucfirst($status)),
+                    'tone' => $this->attendanceTone($status),
                 ]);
             }
 
@@ -498,6 +432,7 @@ final class StudentAttendanceService
                 'courses.code as course_code',
                 'courses.name as course_name',
             )
+            ->limit(30)
             ->get()
             ->map(fn (object $record): array => [
                 'id' => (string) ($record->record_key ?: $record->id),
@@ -527,16 +462,8 @@ final class StudentAttendanceService
             'selectedCourseId' => null,
             'selectedSemester' => '',
             'selectedWeek' => '',
-            'filters' => [
-                'courses' => [],
-                'semesters' => [],
-            ],
-            'week' => [
-                'startDate' => '',
-                'endDate' => '',
-                'label' => '',
-                'requestedDate' => null,
-            ],
+            'filters' => ['courses' => [], 'semesters' => []],
+            'week' => ['startDate' => '', 'endDate' => '', 'label' => '', 'requestedDate' => null],
             'summary' => $this->emptySummary(),
             'lastRecorded' => null,
             'weeklySchedule' => [],
@@ -568,9 +495,13 @@ final class StudentAttendanceService
     /**
      * @return array<int, string>
      */
-    private function jsonArray(?string $value): array
+    private function jsonArray(mixed $value): array
     {
-        if ($value === null || $value === '') {
+        if (is_array($value)) {
+            return array_values(array_filter($value, 'is_string'));
+        }
+
+        if (! is_string($value) || trim($value) === '') {
             return [];
         }
 
@@ -591,10 +522,7 @@ final class StudentAttendanceService
 
     private function timeRange(?string $startsAt, ?string $endsAt): string
     {
-        $start = $this->timeValue($startsAt);
-        $end = $this->timeValue($endsAt);
-
-        return trim($start.' - '.$end, ' -');
+        return trim($this->timeValue($startsAt).' - '.$this->timeValue($endsAt), ' -');
     }
 
     private function timeValue(?string $time): string
@@ -602,9 +530,14 @@ final class StudentAttendanceService
         return $time === null || $time === '' ? '' : substr($time, 0, 5);
     }
 
-    private function comparisonDirection(mixed $direction): string
+    private function attendanceTone(string $status): string
     {
-        return in_array($direction, ['up', 'down', 'flat'], true) ? (string) $direction : 'flat';
+        return match ($status) {
+            'present', 'recorded' => 'green',
+            'late' => 'orange',
+            'absent' => 'red',
+            default => 'blue',
+        };
     }
 
     private function tone(mixed $tone): string

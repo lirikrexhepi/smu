@@ -2,12 +2,15 @@
 
 namespace App\Services;
 
+use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 final class StudentGradesTranscriptService
 {
+    public function __construct(private readonly StudentAcademicRecordsService $records) {}
+
     /**
      * @return array<string, mixed>
      */
@@ -26,7 +29,7 @@ final class StudentGradesTranscriptService
 
         return [
             'studentKey' => (string) ($user?->public_id ?? $student->student_key ?? ''),
-            'academicYear' => (string) ($student->academic_year_label ?? $this->summary((int) $student->id)?->academic_year ?? ''),
+            'academicYear' => (string) $this->academicYear((int) $student->id),
             'selectedSemester' => $semester,
             'selectedCourseId' => $courseId !== '' && $courseId !== 'all' ? $courseId : null,
             'filters' => [
@@ -40,55 +43,38 @@ final class StudentGradesTranscriptService
                 'numericGrade' => (float) $row->numeric_grade,
             ])->values()->all(),
             'gradeDistribution' => $this->gradeDistribution($rows),
-            'courseGrades' => $rows->map(fn (object $row): array => [
-                'courseId' => (string) $row->course_key,
-                'courseCode' => (string) $row->course_code,
-                'courseName' => (string) $row->course_name,
-                'credits' => (int) $row->ects,
-                'numericGrade' => (float) $row->numeric_grade,
-                'displayGrade' => $this->gradeLabel((int) round((float) $row->numeric_grade)),
-                'gradePoints' => (float) $row->grade_points,
-                'status' => (string) $row->status,
-                'statusLabel' => (string) ($row->status_label ?: ucfirst(str_replace('-', ' ', (string) $row->status))),
-            ])->values()->all(),
-            'transcriptAction' => $this->transcriptAction((int) $student->id),
+            'courseGrades' => $rows->map(fn (object $row): array => $this->courseGradePayload($row))->values()->all(),
+            'transcriptAction' => [
+                'label' => 'Download unofficial transcript',
+                'status' => $rows->isEmpty() ? 'disabled' : 'available',
+            ],
         ];
     }
 
     private function selectedSemester(int $studentId, string $requested): string
     {
         $requested = trim($requested);
-        $baseQuery = DB::table('transcript_semester_options')
-            ->where('student_id', $studentId);
 
-        if ($requested !== '' && $requested !== 'all') {
-            $option = (clone $baseQuery)
+        if ($requested !== '') {
+            if ($requested === 'all') {
+                return 'all';
+            }
+
+            $exists = DB::table('student_enrollments')
+                ->join('semesters', 'semesters.id', '=', 'student_enrollments.semester_id')
+                ->where('student_enrollments.student_id', $studentId)
                 ->where(function ($query) use ($requested): void {
-                    $query->where('semester_code', $requested)
-                        ->orWhere('label', $requested);
+                    $query->where('semesters.code', $requested)
+                        ->orWhere('semesters.name', $requested);
                 })
-                ->first();
+                ->exists();
 
-            if ($option !== null) {
-                return (string) $option->semester_code;
+            if ($exists) {
+                return $requested;
             }
         }
 
-        $default = (clone $baseQuery)
-            ->orderByDesc('is_default')
-            ->orderByDesc('id')
-            ->first();
-
-        if ($default !== null) {
-            return (string) $default->semester_code;
-        }
-
-        $fallback = DB::table('transcript_course_grades')
-            ->where('student_id', $studentId)
-            ->orderByDesc('semester_code')
-            ->value('semester_code');
-
-        return (string) ($fallback ?? '');
+        return 'all';
     }
 
     /**
@@ -96,33 +82,26 @@ final class StudentGradesTranscriptService
      */
     private function semesterOptions(int $studentId): array
     {
-        $options = DB::table('transcript_semester_options')
-            ->where('student_id', $studentId)
-            ->orderByDesc('is_default')
-            ->orderByDesc('semester_code')
+        $options = DB::table('student_enrollments')
+            ->join('semesters', 'semesters.id', '=', 'student_enrollments.semester_id')
+            ->where('student_enrollments.student_id', $studentId)
+            ->where('student_enrollments.status', '!=', 'dropped')
+            ->select('semesters.code', 'semesters.name', 'semesters.is_current', 'semesters.number', 'semesters.id')
+            ->distinct()
+            ->orderByDesc('semesters.is_current')
+            ->orderByDesc('semesters.number')
+            ->orderByDesc('semesters.id')
             ->get()
-            ->map(fn (object $option): array => [
-                'id' => (string) $option->semester_code,
-                'label' => (string) $option->label,
+            ->map(fn (object $semester): array => [
+                'id' => (string) $semester->code,
+                'label' => (string) $semester->name,
             ])
             ->values()
             ->all();
 
-        if ($options !== []) {
-            return $options;
-        }
-
-        return DB::table('transcript_course_grades')
-            ->where('student_id', $studentId)
-            ->select('semester_code')
-            ->distinct()
-            ->orderByDesc('semester_code')
-            ->get()
-            ->map(fn (object $option): array => [
-                'id' => (string) $option->semester_code,
-                'label' => (string) $option->semester_code,
-            ])
-            ->all();
+        return array_merge([
+            ['id' => 'all', 'label' => 'All Semesters'],
+        ], $options);
     }
 
     /**
@@ -130,10 +109,18 @@ final class StudentGradesTranscriptService
      */
     private function courseOptions(int $studentId, string $semester): array
     {
-        return DB::table('transcript_course_grades')
-            ->join('courses', 'courses.id', '=', 'transcript_course_grades.course_id')
-            ->where('transcript_course_grades.student_id', $studentId)
-            ->when($semester !== '', fn ($query) => $query->where('transcript_course_grades.semester_code', $semester))
+        return DB::table('student_enrollments')
+            ->join('courses', 'courses.id', '=', 'student_enrollments.course_id')
+            ->leftJoin('semesters', 'semesters.id', '=', 'student_enrollments.semester_id')
+            ->where('student_enrollments.student_id', $studentId)
+            ->where('student_enrollments.status', '!=', 'dropped')
+            ->when($semester !== '' && $semester !== 'all', function ($query) use ($semester): void {
+                $query->where(function ($query) use ($semester): void {
+                    $query->where('semesters.code', $semester)
+                        ->orWhere('semesters.name', $semester);
+                });
+            })
+            ->orderByDesc('semesters.number')
             ->orderBy('courses.code')
             ->select('courses.course_key', 'courses.code', 'courses.name')
             ->get()
@@ -151,11 +138,13 @@ final class StudentGradesTranscriptService
      */
     private function courseGradeRows(int $studentId, string $semester, string $courseId): Collection
     {
-        return DB::table('transcript_course_grades')
-            ->join('courses', 'courses.id', '=', 'transcript_course_grades.course_id')
-            ->leftJoin('semesters', 'semesters.code', '=', 'transcript_course_grades.semester_code')
-            ->where('transcript_course_grades.student_id', $studentId)
-            ->when($semester !== '', fn ($query) => $query->where('transcript_course_grades.semester_code', $semester))
+        $query = $this->courseGradeBaseQuery($studentId)
+            ->when($semester !== '' && $semester !== 'all', function ($query) use ($semester): void {
+                $query->where(function ($query) use ($semester): void {
+                    $query->where('semesters.code', $semester)
+                        ->orWhere('semesters.name', $semester);
+                });
+            })
             ->when($courseId !== '' && $courseId !== 'all', function ($query) use ($courseId): void {
                 $query->where(function ($query) use ($courseId): void {
                     $query->where('courses.course_key', $courseId)
@@ -165,24 +154,38 @@ final class StudentGradesTranscriptService
                         $query->orWhere('courses.id', (int) $courseId);
                     }
                 });
-            })
+            });
+
+        return $query
             ->orderByDesc('semesters.number')
             ->orderBy('courses.code')
+            ->get();
+    }
+
+    private function courseGradeBaseQuery(int $studentId): Builder
+    {
+        return DB::table('student_enrollments')
+            ->join('courses', 'courses.id', '=', 'student_enrollments.course_id')
+            ->leftJoin('semesters', 'semesters.id', '=', 'student_enrollments.semester_id')
+            ->leftJoinSub($this->records->gradeAveragesSubquery(), 'grade_stats', function ($join): void {
+                $join->on('grade_stats.student_enrollment_id', '=', 'student_enrollments.id');
+            })
+            ->where('student_enrollments.student_id', $studentId)
+            ->where('student_enrollments.status', '!=', 'dropped')
+            ->whereNotNull('grade_stats.numeric_grade')
             ->select(
-                'transcript_course_grades.*',
+                'student_enrollments.id as enrollment_id',
+                'student_enrollments.status as enrollment_status',
                 'courses.course_key',
                 'courses.code as course_code',
                 'courses.name as course_name',
                 'courses.ects',
-            )
-            ->get();
-    }
-
-    private function summary(int $studentId): ?object
-    {
-        return DB::table('transcript_summaries')
-            ->where('student_id', $studentId)
-            ->first();
+                'semesters.code as semester_code',
+                'semesters.name as semester_name',
+                'semesters.number as semester_number',
+                'grade_stats.numeric_grade',
+                'grade_stats.grade_count',
+            );
     }
 
     /**
@@ -191,32 +194,24 @@ final class StudentGradesTranscriptService
      */
     private function summaryPayload(int $studentId, Collection $rows): array
     {
-        $summary = $this->summary($studentId);
-
-        if ($summary === null) {
-            $passedRows = $rows->where('status', 'passed');
-
-            return [
-                'averageGrade' => $rows->isEmpty() ? 0 : round((float) $rows->avg('numeric_grade'), 2),
-                'gradeStatus' => $rows->isEmpty() ? 'No grades published yet' : 'Grades available',
-                'totalCreditsEarned' => (int) $passedRows->sum('ects'),
-                'requiredCredits' => 0,
-                'coursesCompleted' => $passedRows->count(),
-                'completionPercentage' => 0,
-                'academicStanding' => '',
-                'eligibilityStatus' => '',
-            ];
-        }
+        $completedRows = $this->courseGradeBaseQuery($studentId)
+            ->where('student_enrollments.status', 'completed')
+            ->get();
+        $passedRows = $completedRows->filter(fn (object $row): bool => (float) $row->numeric_grade >= 6);
+        $requiredCredits = (int) (DB::table('students')
+            ->leftJoin('programs', 'programs.id', '=', 'students.program_id')
+            ->where('students.id', $studentId)
+            ->value('programs.required_credits') ?? 0);
 
         return [
-            'averageGrade' => (float) $summary->average_grade,
-            'gradeStatus' => (string) ($summary->grade_status ?? ''),
-            'totalCreditsEarned' => (int) $summary->total_credits_earned,
-            'requiredCredits' => (int) $summary->required_credits,
-            'coursesCompleted' => (int) $summary->courses_completed,
-            'completionPercentage' => (int) $summary->completion_percentage,
-            'academicStanding' => (string) ($summary->academic_standing ?? ''),
-            'eligibilityStatus' => (string) ($summary->eligibility_status ?? ''),
+            'averageGrade' => $rows->isEmpty() ? 0 : round((float) $rows->avg('numeric_grade'), 2),
+            'gradeStatus' => $rows->isEmpty() ? 'No grades published yet' : ($rows->filter(fn (object $row): bool => (float) $row->numeric_grade >= 6)->isEmpty() ? 'At risk' : 'On track'),
+            'totalCreditsEarned' => (int) $passedRows->sum('ects'),
+            'requiredCredits' => $requiredCredits,
+            'coursesCompleted' => $passedRows->count(),
+            'completionPercentage' => $requiredCredits > 0 ? (int) round(((int) $passedRows->sum('ects') / $requiredCredits) * 100) : 0,
+            'academicStanding' => $this->academicStanding($rows),
+            'eligibilityStatus' => $passedRows->isEmpty() ? 'In progress' : 'Eligible to continue',
         ];
     }
 
@@ -227,8 +222,7 @@ final class StudentGradesTranscriptService
     private function gradeDistribution(Collection $rows): array
     {
         $counts = $rows
-            ->map(fn (object $row): int => (int) round((float) $row->numeric_grade))
-            ->filter(fn (int $grade): bool => $grade >= 5 && $grade <= 10)
+            ->map(fn (object $row): int => max(5, min(10, (int) round((float) $row->numeric_grade))))
             ->countBy();
 
         $total = max(1, (int) $counts->sum());
@@ -236,7 +230,7 @@ final class StudentGradesTranscriptService
         return collect([10, 9, 8, 7, 6, 5])
             ->map(fn (int $grade): array => [
                 'grade' => $grade,
-                'label' => $this->gradeLabel($grade),
+                'label' => $grade.' '.$this->records->gradeDescription($grade),
                 'count' => (int) ($counts[$grade] ?? 0),
                 'percentage' => (int) round(((int) ($counts[$grade] ?? 0) / $total) * 100),
             ])
@@ -244,35 +238,46 @@ final class StudentGradesTranscriptService
     }
 
     /**
-     * @return array{label: string, status: string}
+     * @return array<string, mixed>
      */
-    private function transcriptAction(int $studentId): array
+    private function courseGradePayload(object $row): array
     {
-        $summary = $this->summary($studentId);
-
-        if ($summary === null) {
-            return [
-                'label' => 'Transcript unavailable',
-                'status' => 'disabled',
-            ];
-        }
+        $status = $this->records->courseStatus((string) $row->enrollment_status, $row->numeric_grade);
 
         return [
-            'label' => (string) ($summary->transcript_action_label ?? 'Download unofficial transcript'),
-            'status' => (string) ($summary->transcript_action_status ?? 'available'),
+            'courseId' => (string) $row->course_key,
+            'courseCode' => (string) $row->course_code,
+            'courseName' => (string) $row->course_name,
+            'credits' => (int) $row->ects,
+            'numericGrade' => (float) $row->numeric_grade,
+            'displayGrade' => $this->records->gradeLabel($row->numeric_grade),
+            'gradePoints' => (float) $row->numeric_grade,
+            'status' => $status,
+            'statusLabel' => $this->records->courseStatusLabel($status),
         ];
     }
 
-    private function gradeLabel(int $grade): string
+    private function academicYear(int $studentId): string
     {
-        return match ($grade) {
-            10 => '10 Excellent',
-            9 => '9 Very Good',
-            8 => '8 Good',
-            7 => '7 Satisfactory',
-            6 => '6 Sufficient',
-            default => '5 Failed',
-        };
+        return (string) (DB::table('student_enrollments')
+            ->join('semesters', 'semesters.id', '=', 'student_enrollments.semester_id')
+            ->leftJoin('academic_years', 'academic_years.id', '=', 'semesters.academic_year_id')
+            ->where('student_enrollments.student_id', $studentId)
+            ->orderByDesc('semesters.is_current')
+            ->orderByDesc('semesters.number')
+            ->value('academic_years.name') ?? '');
+    }
+
+    /**
+     * @param  Collection<int, object>  $rows
+     */
+    private function academicStanding(Collection $rows): string
+    {
+        if ($rows->isEmpty()) {
+            return '';
+        }
+
+        return (float) $rows->avg('numeric_grade') >= 6 ? 'Good standing' : 'Academic risk';
     }
 
     /**
@@ -283,7 +288,7 @@ final class StudentGradesTranscriptService
         return [
             'studentKey' => (string) ($studentKey ?? ''),
             'academicYear' => '',
-            'selectedSemester' => '',
+            'selectedSemester' => 'all',
             'selectedCourseId' => null,
             'filters' => ['semesters' => [], 'courses' => []],
             'summary' => [

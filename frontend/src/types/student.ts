@@ -111,7 +111,7 @@ export type StudentProfileUpdate = {
 
 export type StudentCourseTone = 'blue' | 'green' | 'orange' | 'purple'
 
-export type StudentCourseStatus = 'active' | 'registered' | 'upcoming'
+export type StudentCourseStatus = 'active' | 'registered' | 'upcoming' | 'completed'
 
 export type StudentCourseEvent = {
   id: string

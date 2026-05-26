@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use Database\Seeders\SemsDemoSeeder;
+use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -35,7 +35,7 @@ final class AttendanceSessionTest extends TestCase
 
     public function test_professor_can_start_current_class_and_students_check_in(): void
     {
-        $this->seed(SemsDemoSeeder::class);
+        $this->seed(DatabaseSeeder::class);
 
         $professorToken = $this->loginToken('PROF-1001');
         $studentOneToken = $this->loginToken('STU-1001');
@@ -114,11 +114,11 @@ final class AttendanceSessionTest extends TestCase
 
     public function test_professor_available_classes_only_uses_current_schedule(): void
     {
-        $this->seed(SemsDemoSeeder::class);
-
-        $professorToken = $this->loginToken('PROF-1001');
+        $this->seed(DatabaseSeeder::class);
 
         Carbon::setTestNow('2026-05-26 17:00:00');
+
+        $professorToken = $this->loginToken('PROF-1001');
 
         $this->withHeader('Authorization', 'Bearer '.$professorToken)
             ->getJson('/api/professor/attendance/available-classes')

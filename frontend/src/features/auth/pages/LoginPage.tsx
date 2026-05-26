@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import { login } from '@/lib/api/auth'
-import { storeAuthUser } from '@/lib/auth/session'
+import { storeAuthToken, storeAuthUser } from '@/lib/auth/session'
 
 export function LoginPage() {
   const navigate = useNavigate()
@@ -29,6 +29,7 @@ export function LoginPage() {
         return
       }
 
+      storeAuthToken(response.data.token)
       storeAuthUser(response.data.user)
       navigate(response.data.redirectPath, { replace: true })
     } catch (requestError) {

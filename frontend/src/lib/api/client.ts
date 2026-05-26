@@ -1,3 +1,5 @@
+import { getStoredAuthToken } from '@/lib/auth/session'
+
 export type ApiEnvelope<T> = {
   success: boolean
   data: T
@@ -51,12 +53,19 @@ export function apiAssetUrl(path: string | null | undefined): string | null {
   return `${API_BASE_URL.replace(/\/$/, '')}/${path.replace(/^\//, '')}`
 }
 
+function apiHeaders(extraHeaders: HeadersInit = {}): HeadersInit {
+  const token = getStoredAuthToken()
+
+  return {
+    Accept: 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...extraHeaders,
+  }
+}
+
 export async function apiGet<T>(path: string): Promise<ApiEnvelope<T>> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
-    credentials: 'include',
-    headers: {
-      Accept: 'application/json',
-    },
+    headers: apiHeaders(),
   })
 
   return parseApiResponse<T>(response, 'API request failed')
@@ -65,11 +74,9 @@ export async function apiGet<T>(path: string): Promise<ApiEnvelope<T>> {
 export async function apiPost<T>(path: string, body: Record<string, unknown>): Promise<ApiEnvelope<T>> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: 'POST',
-    credentials: 'include',
-    headers: {
-      Accept: 'application/json',
+    headers: apiHeaders({
       'Content-Type': 'application/json',
-    },
+    }),
     body: JSON.stringify(body),
   })
 
@@ -79,11 +86,9 @@ export async function apiPost<T>(path: string, body: Record<string, unknown>): P
 export async function apiPatch<T>(path: string, body: Record<string, unknown>): Promise<ApiEnvelope<T>> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: 'PATCH',
-    credentials: 'include',
-    headers: {
-      Accept: 'application/json',
+    headers: apiHeaders({
       'Content-Type': 'application/json',
-    },
+    }),
     body: JSON.stringify(body),
   })
 
@@ -93,10 +98,7 @@ export async function apiPatch<T>(path: string, body: Record<string, unknown>): 
 export async function apiUpload<T>(path: string, formData: FormData): Promise<ApiEnvelope<T>> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: 'POST',
-    credentials: 'include',
-    headers: {
-      Accept: 'application/json',
-    },
+    headers: apiHeaders(),
     body: formData,
   })
 

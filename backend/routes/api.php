@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\HealthController;
+use App\Http\Controllers\ProfessorAttendanceController;
 use App\Http\Controllers\StudentAttendanceController;
 use App\Http\Controllers\StudentCoursesController;
 use App\Http\Controllers\StudentDashboardController;
@@ -21,6 +22,7 @@ Route::middleware(['jwt.auth', 'role:student'])->prefix('student')->group(functi
     Route::get('/courses', [StudentCoursesController::class, 'index']);
     Route::get('/courses/{courseId}', [StudentCoursesController::class, 'show']);
     Route::get('/attendance', [StudentAttendanceController::class, 'show']);
+    Route::post('/attendance/check-in', [StudentAttendanceController::class, 'checkIn']);
     Route::get('/grades-transcript', [StudentGradesTranscriptController::class, 'show']);
     Route::get('/profile', [StudentProfileController::class, 'show']);
     Route::patch('/profile', [StudentProfileController::class, 'update']);
@@ -29,6 +31,11 @@ Route::middleware(['jwt.auth', 'role:student'])->prefix('student')->group(functi
 
 Route::middleware(['jwt.auth', 'role:professor'])->prefix('professor')->group(function (): void {
     Route::get('/dashboard', fn () => ApiResponse::success((object) []));
+    Route::get('/attendance', [ProfessorAttendanceController::class, 'index']);
+    Route::get('/attendance/available-classes', [ProfessorAttendanceController::class, 'availableClasses']);
+    Route::post('/attendance/sessions', [ProfessorAttendanceController::class, 'storeSession']);
+    Route::get('/attendance/sessions/{sessionId}', [ProfessorAttendanceController::class, 'showSession']);
+    Route::patch('/attendance/sessions/{sessionId}/close', [ProfessorAttendanceController::class, 'closeSession']);
 });
 
 Route::middleware(['jwt.auth', 'role:admin'])->prefix('admin')->group(function (): void {

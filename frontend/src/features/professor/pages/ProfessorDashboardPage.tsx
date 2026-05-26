@@ -1,26 +1,96 @@
 import type { LucideIcon } from 'lucide-react'
-import { BookOpen, CalendarCheck, ClipboardCheck, Users } from 'lucide-react'
+import { BookOpen, CalendarCheck, ClipboardCheck, Users, Loader2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 import { PageHeader } from '@/components/shared/PageHeader'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { assessments, professorCourses, professorSessions, type Tone } from '@/features/professor/data/mockProfessor'
+import { getProfessorDashboard } from '@/lib/api/professor'
 import { cn } from '@/lib/utils'
 
-const totalStudents = professorCourses.reduce((total, course) => total + course.students, 0)
-const averageAttendance = Math.round(
-  professorCourses.reduce((total, course) => total + course.attendanceRate, 0) / professorCourses.length,
-)
-const pendingGrades = professorCourses.reduce((total, course) => total + course.pendingGrades, 0)
+type Tone = 'blue' | 'green' | 'orange' | 'purple' | 'red' | 'teal'
 
-const metrics = [
-  { label: 'Active Courses', value: String(professorCourses.length), helper: 'Spring 2026', icon: BookOpen, tone: 'blue' },
-  { label: 'Students', value: String(totalStudents), helper: 'Across all sections', icon: Users, tone: 'green' },
-  { label: 'Attendance', value: `${averageAttendance}%`, helper: 'Average this week', icon: CalendarCheck, tone: 'orange' },
-  { label: 'Pending Grades', value: String(pendingGrades), helper: 'Needs review', icon: ClipboardCheck, tone: 'purple' },
-] satisfies Array<{ label: string; value: string; helper: string; icon: LucideIcon; tone: Tone }>
+type DashboardData = {
+  metrics: Array<{ label: string; value: string; helper: string; tone: string }>
+  sessions: Array<{
+    id: string
+    courseCode: string
+    courseName: string
+    date: string
+    time: string
+    room: string
+    type: string
+    present: number
+    absent: number
+    late: number
+    status: string
+  }>
+  assessments: Array<{
+    id: string
+    courseCode: string
+    title: string
+    type: string
+    dueDate: string
+    submitted: number
+    total: number
+    graded: number
+  }>
+  courses: Array<{
+    id: string
+    code: string
+    name: string
+    students: number
+    averageGrade: number
+    attendanceRate: number
+    status: string
+  }>
+}
+
+const iconMap: Record<string, LucideIcon> = {
+  'Active Courses': BookOpen,
+  'Students': Users,
+  'Attendance': CalendarCheck,
+  'Pending Grades': ClipboardCheck,
+}
 
 export function ProfessorDashboardPage() {
+  const [data, setData] = useState<DashboardData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    getProfessorDashboard()
+      .then((res) => {
+        if (res.success && res.data) {
+          setData(res.data)
+        } else {
+          setError(res.message || 'Failed to load dashboard data.')
+        }
+      })
+      .catch(() => {
+        setError('Error connecting to the server.')
+      })
+      .finally(() => {
+        setLoading(false)
+      })
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="flex h-[400px] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+      </div>
+    )
+  }
+
+  if (error || !data) {
+    return (
+      <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-600">
+        {error || 'No dashboard data available.'}
+      </div>
+    )
+  }
+
   return (
     <>
       <PageHeader title="Professor Dashboard" description="Teaching overview" />
@@ -31,20 +101,32 @@ export function ProfessorDashboardPage() {
       </div>
 
       <div className="mb-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {metrics.map((metric) => (
-          <MetricCard key={metric.label} metric={metric} />
-        ))}
+        {data.metrics.map((metric) => {
+          const Icon = iconMap[metric.label] || BookOpen
+          return (
+            <MetricCard
+              key={metric.label}
+              metric={{
+                label: metric.label,
+                value: metric.value,
+                helper: metric.helper,
+                icon: Icon,
+                tone: metric.tone as Tone,
+              }}
+            />
+          )
+        })}
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[1.15fr_0.85fr]">
         <Card>
           <CardHeader className="flex-row items-center justify-between">
             <CardTitle>Today's Teaching Schedule</CardTitle>
-            <Badge variant="secondary">3 sessions</Badge>
+            <Badge variant="secondary">{data.sessions.length} sessions</Badge>
           </CardHeader>
           <CardContent>
             <div className="divide-y divide-slate-100">
-              {professorSessions.map((session) => (
+              {data.sessions.map((session) => (
                 <div key={session.id} className="grid gap-3 py-4 text-sm md:grid-cols-[120px_1fr_110px_auto] md:items-center">
                   <div>
                     <p className="font-semibold text-slate-950">{session.time}</p>
@@ -70,7 +152,7 @@ export function ProfessorDashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {assessments.map((assessment) => {
+              {data.assessments.map((assessment) => {
                 const percent = Math.round((assessment.graded / assessment.total) * 100)
 
                 return (
@@ -99,7 +181,7 @@ export function ProfessorDashboardPage() {
       </div>
 
       <div className="mt-5 grid gap-5 xl:grid-cols-3">
-        {professorCourses.map((course) => (
+        {data.courses.map((course) => (
           <Card key={course.id}>
             <CardContent className="p-5">
               <div className="flex items-start justify-between gap-3">

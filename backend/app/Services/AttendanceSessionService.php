@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Exceptions\AttendanceSessionException;
-use App\Models\User;
+use App\Models\Identity\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -63,10 +63,7 @@ final class AttendanceSessionService
             ->all();
     }
 
-    /**
-     * @return array<string, mixed>
-     */
-    public function startSession(User $user, string $courseIdentifier, int $courseScheduleId): array
+    public function startSession(User $user, string $courseIdentifier, ?int $courseScheduleId = null): array
     {
         $professorId = $this->professorIdForUser($user);
 
@@ -76,7 +73,8 @@ final class AttendanceSessionService
 
         $class = $this->activeClassRows($professorId)
             ->first(function (object $class) use ($courseIdentifier, $courseScheduleId): bool {
-                return (int) $class->schedule_id === $courseScheduleId
+                $matchesSchedule = $courseScheduleId === null || (int) $class->schedule_id === $courseScheduleId;
+                return $matchesSchedule
                     && in_array($courseIdentifier, [
                         (string) $class->course_id,
                         (string) $class->course_key,
@@ -834,5 +832,69 @@ final class AttendanceSessionService
         $decoded = json_decode($value, true);
 
         return is_array($decoded) ? array_values(array_filter($decoded, 'is_string')) : [];
+    }
+
+    /**
+     * Bulk-record attendance statuses for a session (professor-side manual entry).
+     *
+     * @param array<int, array{studentId: string, status: string}> $records
+     */
+    public function recordAttendanceManually(User $user, int $sessionId, array $records): void
+    {
+        $professorId = $this->professorIdForUser($user);
+
+        if ($professorId === null) {
+            throw new AttendanceSessionException('Professor profile was not found.', 404);
+        }
+
+        $session = DB::table('attendance_sessions')
+            ->where('id', $sessionId)
+            ->where('professor_id', $professorId)
+            ->first();
+
+        if ($session === null) {
+            throw new AttendanceSessionException('Attendance session not found.', 404);
+        }
+
+        $now = now();
+        foreach ($records as $record) {
+            $studentId = DB::table('students')
+                ->where('student_key', $record['studentId'])
+                ->value('id');
+
+            if ($studentId === null) {
+                continue;
+            }
+
+            $status = in_array($record['status'], ['present', 'late', 'absent', 'pending'], true)
+                ? $record['status']
+                : 'absent';
+
+            $existing = DB::table('attendance_session_records')
+                ->where('attendance_session_id', $sessionId)
+                ->where('student_id', (int) $studentId)
+                ->first();
+
+            if ($existing !== null) {
+                DB::table('attendance_session_records')
+                    ->where('id', (int) $existing->id)
+                    ->update([
+                        'status'        => $status,
+                        'checked_in_at' => in_array($status, ['present', 'late'], true) ? $now : null,
+                        'method'        => 'manual',
+                        'updated_at'    => $now,
+                    ]);
+            } else {
+                DB::table('attendance_session_records')->insert([
+                    'attendance_session_id' => $sessionId,
+                    'student_id'            => (int) $studentId,
+                    'status'                => $status,
+                    'checked_in_at'         => in_array($status, ['present', 'late'], true) ? $now : null,
+                    'method'                => 'manual',
+                    'created_at'            => $now,
+                    'updated_at'            => $now,
+                ]);
+            }
+        }
     }
 }

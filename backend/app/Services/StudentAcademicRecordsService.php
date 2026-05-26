@@ -14,7 +14,7 @@ final class StudentAcademicRecordsService
         return DB::table('course_grade_records')
             ->whereNotNull('grade')
             ->select('student_enrollment_id')
-            ->selectRaw('ROUND(SUM(grade * COALESCE(weight, 1)) / NULLIF(SUM(COALESCE(weight, 1)), 0), 2) as numeric_grade')
+            ->selectRaw('ROUND((SUM(grade * COALESCE(weight, 1)) * 1.0) / NULLIF(SUM(COALESCE(weight, 1)), 0), 2) as numeric_grade')
             ->selectRaw('COUNT(grade) as grade_count')
             ->selectRaw('MAX(graded_on) as latest_graded_on')
             ->groupBy('student_enrollment_id');

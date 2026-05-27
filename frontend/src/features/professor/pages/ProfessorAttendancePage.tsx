@@ -1,5 +1,6 @@
-import { CalendarCheck, CheckCircle2, Clock3, Plus, UserCheck, XCircle, Loader2 } from 'lucide-react'
+import { CalendarCheck, CheckCircle2, Clock3, Plus, UserCheck, XCircle, Loader2, QrCode } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { QRCodeSVG } from 'qrcode.react'
 
 import { PageHeader } from '@/components/shared/PageHeader'
 import { Badge } from '@/components/ui/badge'
@@ -7,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { getProfessorAttendance, createAttendanceSession } from '@/lib/api/professor'
 import { cn } from '@/lib/utils'
+import { useToast } from '@/components/ui/toast'
 
 type Session = {
   id: string
@@ -30,6 +32,7 @@ type CourseSummary = {
 }
 
 export function ProfessorAttendancePage() {
+  const toast = useToast()
   const [sessions, setSessions] = useState<Session[]>([])
   const [courses, setCourses] = useState<CourseSummary[]>([])
   const [loading, setLoading] = useState(true)
@@ -38,8 +41,9 @@ export function ProfessorAttendancePage() {
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedCourseKey, setSelectedCourseKey] = useState('')
-  const [createdSession, setCreatedSession] = useState<{ code: string; courseName: string } | null>(null)
+  const [createdSession, setCreatedSession] = useState<{ code: string; courseName: string; qrToken?: string } | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [activeTab, setActiveTab] = useState<'code' | 'qr'>('code')
 
   const fetchData = () => {
     setLoading(true)
@@ -75,10 +79,13 @@ export function ProfessorAttendancePage() {
     createAttendanceSession({ courseKey: selectedCourseKey })
       .then((res) => {
         if (res.success && res.data) {
+          toast.success('Attendance session started successfully.')
           setCreatedSession({
-            code: res.data.code,
+            code: res.data.checkInCode || res.data.code,
             courseName: res.data.courseName,
+            qrToken: res.data.qrToken || res.data.qrPayload,
           })
+          setActiveTab('code')
           // Reload sessions list
           getProfessorAttendance().then((res2) => {
             if (res2.success && res2.data) {
@@ -86,11 +93,11 @@ export function ProfessorAttendancePage() {
             }
           })
         } else {
-          alert(res.message || 'Failed to create session.')
+          toast.error(res.message || 'Failed to create session.')
         }
       })
       .catch(() => {
-        alert('Error connecting to the server.')
+        toast.error('Error connecting to the server.')
       })
       .finally(() => {
         setSubmitting(false)
@@ -231,16 +238,59 @@ export function ProfessorAttendancePage() {
                 </div>
               </form>
             ) : (
-              <div className="mt-4 space-y-4 text-center">
+              <div className="mt-4 space-y-4 text-center animate-fadeIn">
                 <p className="text-sm text-slate-600">
                   Attendance session started for <strong>{createdSession.courseName}</strong>!
                 </p>
-                <div className="rounded-lg bg-blue-50 p-4 border border-blue-200">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-blue-700">Student Access Code</p>
-                  <p className="mt-2 text-4xl font-extrabold tracking-widest text-blue-900">{createdSession.code}</p>
+
+                {/* Tab Switcher */}
+                <div className="flex rounded-md bg-slate-100 p-1 border border-slate-200">
+                  <button
+                    type="button"
+                    className={cn(
+                      "flex-1 py-1.5 text-xs font-semibold rounded-md transition-all duration-200",
+                      activeTab === 'code' ? "bg-white text-blue-700 shadow-sm" : "text-slate-600 hover:text-slate-900"
+                    )}
+                    onClick={() => setActiveTab('code')}
+                  >
+                    Access Code
+                  </button>
+                  <button
+                    type="button"
+                    className={cn(
+                      "flex-1 py-1.5 text-xs font-semibold rounded-md transition-all duration-200 flex items-center justify-center gap-1",
+                      activeTab === 'qr' ? "bg-white text-blue-700 shadow-sm" : "text-slate-600 hover:text-slate-900"
+                    )}
+                    onClick={() => setActiveTab('qr')}
+                  >
+                    <QrCode className="h-3.5 w-3.5" />
+                    QR Code
+                  </button>
                 </div>
-                <p className="text-xs text-slate-500">
-                  Provide this code or share the QR view with your students to let them check-in automatically.
+
+                {activeTab === 'code' ? (
+                  <div className="rounded-lg bg-blue-50 p-4 border border-blue-200 transition-all duration-200">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-blue-700">Student Access Code</p>
+                    <p className="mt-2 text-4xl font-extrabold tracking-widest text-blue-900">{createdSession.code}</p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center rounded-lg bg-blue-50 p-5 border border-blue-200 transition-all duration-200">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-blue-700 mb-3">Scan to Check-In</p>
+                    <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
+                      <QRCodeSVG
+                        value={createdSession.qrToken || createdSession.code}
+                        size={180}
+                        level="H"
+                        includeMargin={false}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <p className="text-xs text-slate-500 min-h-[32px] flex items-center justify-center px-2">
+                  {activeTab === 'code' 
+                    ? "Provide this code to your students to let them check-in manually." 
+                    : "Display this QR code on-screen for instant student check-in."}
                 </p>
                 <Button type="button" className="w-full" onClick={() => setIsModalOpen(false)}>
                   Close

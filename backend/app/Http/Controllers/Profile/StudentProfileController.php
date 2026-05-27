@@ -3,6 +3,11 @@
 namespace App\Http\Controllers\Profile;
 
 use App\Http\Responses\ApiResponse;
+use App\Models\Identity\Student;
+use App\Models\Identity\StudentEmergencyContact;
+use App\Models\Academic\Program;
+use App\Models\Gradebook\StudentEnrollment;
+use App\Models\Gradebook\CourseGradeRecord;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -21,61 +26,38 @@ final class StudentProfileController
             return ApiResponse::error('Unauthenticated.', status: 401);
         }
 
-        $student = DB::table('students')->where('user_id', $user->id)->first();
+        $student = Student::where('user_id', $user->id)->first();
         if ($student === null) {
             return ApiResponse::error('Student profile not found.', status: 404);
         }
 
         DB::transaction(function () use ($request, $user, $student): void {
             // Update User fields
-            DB::table('users')
-                ->where('id', $user->id)
-                ->update([
-                    'name' => (string) $request->input('fullName', $user->name),
-                    'email' => (string) $request->input('email', $user->email),
-                    'updated_at' => now(),
-                ]);
+            $user->update([
+                'name' => (string) $request->input('fullName', $user->name),
+                'email' => (string) $request->input('email', $user->email),
+            ]);
 
             // Update Student fields
-            DB::table('students')
-                ->where('id', $student->id)
-                ->update([
-                    'phone' => (string) $request->input('phone', ''),
-                    'address' => (string) $request->input('address', ''),
-                    'date_of_birth' => (string) $request->input('dateOfBirth', ''),
-                    'gender' => (string) $request->input('gender', ''),
-                    'nationality' => (string) $request->input('nationality', ''),
-                    'personal_number' => (string) $request->input('personalNumber', ''),
-                    'profile_updated_at' => now(),
-                    'updated_at' => now(),
-                ]);
+            $student->update([
+                'phone' => (string) $request->input('phone', ''),
+                'address' => (string) $request->input('address', ''),
+                'date_of_birth' => (string) $request->input('dateOfBirth', ''),
+                'gender' => (string) $request->input('gender', ''),
+                'nationality' => (string) $request->input('nationality', ''),
+                'personal_number' => (string) $request->input('personalNumber', ''),
+                'profile_updated_at' => now(),
+            ]);
 
             // Update/Create primary emergency contact
-            $existingContact = DB::table('student_emergency_contacts')
-                ->where('student_id', $student->id)
-                ->where('is_primary', true)
-                ->first();
-
-            if ($existingContact !== null) {
-                DB::table('student_emergency_contacts')
-                    ->where('id', $existingContact->id)
-                    ->update([
-                        'name' => (string) $request->input('emergencyContactName', ''),
-                        'relationship' => (string) $request->input('emergencyContactRelationship', ''),
-                        'phone' => (string) $request->input('emergencyContactPhone', ''),
-                        'updated_at' => now(),
-                    ]);
-            } else {
-                DB::table('student_emergency_contacts')->insert([
-                    'student_id' => $student->id,
-                    'is_primary' => true,
+            $student->emergencyContacts()->updateOrCreate(
+                ['is_primary' => true],
+                [
                     'name' => (string) $request->input('emergencyContactName', ''),
                     'relationship' => (string) $request->input('emergencyContactRelationship', ''),
                     'phone' => (string) $request->input('emergencyContactPhone', ''),
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
+                ]
+            );
         });
 
         return ApiResponse::success($this->profileData($request), 'Student profile updated successfully.');
@@ -104,12 +86,9 @@ final class StudentProfileController
         }
 
         $url = '/uploads/' . $path;
-        DB::table('users')
-            ->where('id', $user->id)
-            ->update([
-                'avatar_url' => $url,
-                'updated_at' => now(),
-            ]);
+        $user->update([
+            'avatar_url' => $url,
+        ]);
 
         return ApiResponse::success($this->profileData($request), 'Student avatar uploaded successfully.');
     }
@@ -120,9 +99,8 @@ final class StudentProfileController
     private function profileData(Request $request): array
     {
         $user = $request->user();
-        $student = $user === null ? null : DB::table('students')->where('user_id', $user->id)->first();
-        $contact = $student === null ? null : DB::table('student_emergency_contacts')
-            ->where('student_id', $student->id)
+        $student = $user === null ? null : Student::where('user_id', $user->id)->first();
+        $contact = $student === null ? null : $student->emergencyContacts()
             ->orderByDesc('is_primary')
             ->orderBy('id')
             ->first();
@@ -141,11 +119,10 @@ final class StudentProfileController
 
         if ($student !== null) {
             if ($student->program_id !== null) {
-                $programName = DB::table('programs')->where('id', $student->program_id)->value('name') ?? '';
+                $programName = Program::where('id', $student->program_id)->value('name') ?? '';
             }
 
-            $semester = DB::table('student_enrollments')
-                ->join('semesters', 'semesters.id', '=', 'student_enrollments.semester_id')
+            $semester = StudentEnrollment::join('semesters', 'semesters.id', '=', 'student_enrollments.semester_id')
                 ->leftJoin('academic_years', 'academic_years.id', '=', 'semesters.academic_year_id')
                 ->where('student_enrollments.student_id', $student->id)
                 ->where('student_enrollments.status', '!=', 'dropped')
@@ -196,14 +173,12 @@ final class StudentProfileController
 
     private function calculateAcademicSummary(int $studentId): array
     {
-        $gradeStats = DB::table('course_grade_records')
-            ->whereNotNull('grade')
+        $gradeStats = CourseGradeRecord::whereNotNull('grade')
             ->select('student_enrollment_id')
             ->selectRaw('ROUND((SUM(grade * COALESCE(weight, 1)) * 1.0) / NULLIF(SUM(COALESCE(weight, 1)), 0), 2) as numeric_grade')
             ->groupBy('student_enrollment_id');
 
-        $rows = DB::table('student_enrollments')
-            ->join('courses', 'courses.id', '=', 'student_enrollments.course_id')
+        $rows = StudentEnrollment::join('courses', 'courses.id', '=', 'student_enrollments.course_id')
             ->leftJoinSub($gradeStats, 'grade_stats', function ($join): void {
                 $join->on('grade_stats.student_enrollment_id', '=', 'student_enrollments.id');
             })
@@ -221,8 +196,7 @@ final class StudentProfileController
 
         $totalCreditsEarned = (int) $passedRows->sum('ects');
 
-        $requiredCredits = (int) (DB::table('students')
-            ->leftJoin('programs', 'programs.id', '=', 'students.program_id')
+        $requiredCredits = (int) (Student::leftJoin('programs', 'programs.id', '=', 'students.program_id')
             ->where('students.id', $studentId)
             ->value('programs.required_credits') ?? 0);
 

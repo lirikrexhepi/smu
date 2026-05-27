@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
-use Illuminate\Database\Query\Builder;
+use App\Models\Identity\Student;
+use App\Models\Gradebook\StudentEnrollment;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -17,7 +19,7 @@ final class StudentGradesTranscriptService
     public function forRequest(Request $request): array
     {
         $user = $request->user();
-        $student = DB::table('students')->where('user_id', $user?->id)->first();
+        $student = Student::where('user_id', $user?->id)->first();
 
         if ($student === null) {
             return $this->emptyResponse($user?->public_id);
@@ -60,8 +62,7 @@ final class StudentGradesTranscriptService
                 return 'all';
             }
 
-            $exists = DB::table('student_enrollments')
-                ->join('semesters', 'semesters.id', '=', 'student_enrollments.semester_id')
+            $exists = StudentEnrollment::join('semesters', 'semesters.id', '=', 'student_enrollments.semester_id')
                 ->where('student_enrollments.student_id', $studentId)
                 ->where(function ($query) use ($requested): void {
                     $query->where('semesters.code', $requested)
@@ -82,8 +83,7 @@ final class StudentGradesTranscriptService
      */
     private function semesterOptions(int $studentId): array
     {
-        $options = DB::table('student_enrollments')
-            ->join('semesters', 'semesters.id', '=', 'student_enrollments.semester_id')
+        $options = StudentEnrollment::join('semesters', 'semesters.id', '=', 'student_enrollments.semester_id')
             ->where('student_enrollments.student_id', $studentId)
             ->where('student_enrollments.status', '!=', 'dropped')
             ->select('semesters.code', 'semesters.name', 'semesters.is_current', 'semesters.number', 'semesters.id')
@@ -109,8 +109,7 @@ final class StudentGradesTranscriptService
      */
     private function courseOptions(int $studentId, string $semester): array
     {
-        return DB::table('student_enrollments')
-            ->join('courses', 'courses.id', '=', 'student_enrollments.course_id')
+        return StudentEnrollment::join('courses', 'courses.id', '=', 'student_enrollments.course_id')
             ->leftJoin('semesters', 'semesters.id', '=', 'student_enrollments.semester_id')
             ->where('student_enrollments.student_id', $studentId)
             ->where('student_enrollments.status', '!=', 'dropped')
@@ -164,8 +163,7 @@ final class StudentGradesTranscriptService
 
     private function courseGradeBaseQuery(int $studentId): Builder
     {
-        return DB::table('student_enrollments')
-            ->join('courses', 'courses.id', '=', 'student_enrollments.course_id')
+        return StudentEnrollment::join('courses', 'courses.id', '=', 'student_enrollments.course_id')
             ->leftJoin('semesters', 'semesters.id', '=', 'student_enrollments.semester_id')
             ->leftJoinSub($this->records->gradeAveragesSubquery(), 'grade_stats', function ($join): void {
                 $join->on('grade_stats.student_enrollment_id', '=', 'student_enrollments.id');
@@ -198,8 +196,7 @@ final class StudentGradesTranscriptService
             ->where('student_enrollments.status', 'completed')
             ->get();
         $passedRows = $completedRows->filter(fn (object $row): bool => (float) $row->numeric_grade >= 6);
-        $requiredCredits = (int) (DB::table('students')
-            ->leftJoin('programs', 'programs.id', '=', 'students.program_id')
+        $requiredCredits = (int) (Student::leftJoin('programs', 'programs.id', '=', 'students.program_id')
             ->where('students.id', $studentId)
             ->value('programs.required_credits') ?? 0);
 
@@ -259,8 +256,7 @@ final class StudentGradesTranscriptService
 
     private function academicYear(int $studentId): string
     {
-        return (string) (DB::table('student_enrollments')
-            ->join('semesters', 'semesters.id', '=', 'student_enrollments.semester_id')
+        return (string) (StudentEnrollment::join('semesters', 'semesters.id', '=', 'student_enrollments.semester_id')
             ->leftJoin('academic_years', 'academic_years.id', '=', 'semesters.academic_year_id')
             ->where('student_enrollments.student_id', $studentId)
             ->orderByDesc('semesters.is_current')

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Attendance;
 use App\Exceptions\AttendanceSessionException;
 use App\Http\Responses\ApiResponse;
 use App\Services\AttendanceSessionService;
+use App\Services\Attendance\ProfessorAttendanceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -12,13 +13,14 @@ use Illuminate\Support\Facades\Validator;
 final readonly class ProfessorAttendanceController
 {
     public function __construct(
-        private AttendanceSessionService $attendanceSessions
+        private AttendanceSessionService $attendanceSessions,
+        private ProfessorAttendanceService $professorAttendance
     ) {}
 
     public function index(Request $request): JsonResponse
     {
         return ApiResponse::success(
-            $this->attendanceSessions->professorOverview($request->user()),
+            $this->professorAttendance->getAttendanceData($request->user()),
             'Professor attendance loaded'
         );
     }

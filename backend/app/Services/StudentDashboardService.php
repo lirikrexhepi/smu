@@ -2,6 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\Identity\Student;
+use App\Models\Gradebook\StudentEnrollment;
+use App\Models\Gradebook\CourseGradeRecord;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -17,7 +20,7 @@ final class StudentDashboardService
     public function forRequest(Request $request): array
     {
         $user = $request->user();
-        $student = DB::table('students')->where('user_id', $user?->id)->first();
+        $student = Student::where('user_id', $user?->id)->first();
 
         if ($student === null) {
             return [
@@ -50,8 +53,7 @@ final class StudentDashboardService
 
     private function currentSemester(int $studentId): ?object
     {
-        return DB::table('student_enrollments')
-            ->join('semesters', 'semesters.id', '=', 'student_enrollments.semester_id')
+        return StudentEnrollment::join('semesters', 'semesters.id', '=', 'student_enrollments.semester_id')
             ->leftJoin('academic_years', 'academic_years.id', '=', 'semesters.academic_year_id')
             ->where('student_enrollments.student_id', $studentId)
             ->where('student_enrollments.status', '!=', 'dropped')
@@ -118,8 +120,7 @@ final class StudentDashboardService
      */
     private function enrollmentRows(int $studentId, ?int $semesterId): Collection
     {
-        return DB::table('student_enrollments')
-            ->join('courses', 'courses.id', '=', 'student_enrollments.course_id')
+        return StudentEnrollment::join('courses', 'courses.id', '=', 'student_enrollments.course_id')
             ->leftJoin('semesters', 'semesters.id', '=', 'student_enrollments.semester_id')
             ->leftJoinSub($this->records->gradeAveragesSubquery(), 'grade_stats', function ($join): void {
                 $join->on('grade_stats.student_enrollment_id', '=', 'student_enrollments.id');
@@ -155,8 +156,7 @@ final class StudentDashboardService
         $today = Carbon::today();
         $dayName = $today->format('l');
 
-        return DB::table('student_enrollments')
-            ->join('courses', 'courses.id', '=', 'student_enrollments.course_id')
+        return StudentEnrollment::join('courses', 'courses.id', '=', 'student_enrollments.course_id')
             ->join('course_schedules', 'course_schedules.course_id', '=', 'courses.id')
             ->where('student_enrollments.student_id', $studentId)
             ->whereIn('student_enrollments.status', ['active', 'registered', 'upcoming'])
@@ -195,8 +195,7 @@ final class StudentDashboardService
      */
     private function upcomingDeadlines(int $studentId): array
     {
-        return DB::table('student_enrollments')
-            ->join('courses', 'courses.id', '=', 'student_enrollments.course_id')
+        return StudentEnrollment::join('courses', 'courses.id', '=', 'student_enrollments.course_id')
             ->join('course_events', 'course_events.course_id', '=', 'courses.id')
             ->where('student_enrollments.student_id', $studentId)
             ->where('student_enrollments.status', '!=', 'dropped')
@@ -224,8 +223,7 @@ final class StudentDashboardService
      */
     private function latestGrades(int $studentId): array
     {
-        return DB::table('course_grade_records')
-            ->join('student_enrollments', 'student_enrollments.id', '=', 'course_grade_records.student_enrollment_id')
+        return CourseGradeRecord::join('student_enrollments', 'student_enrollments.id', '=', 'course_grade_records.student_enrollment_id')
             ->join('courses', 'courses.id', '=', 'student_enrollments.course_id')
             ->where('student_enrollments.student_id', $studentId)
             ->whereNotNull('course_grade_records.grade')

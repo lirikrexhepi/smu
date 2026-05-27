@@ -2,7 +2,16 @@
 
 namespace App\Services;
 
-use Illuminate\Database\Query\Builder;
+use App\Models\Identity\Student;
+use App\Models\Gradebook\StudentEnrollment;
+use App\Models\Academic\Course;
+use App\Models\Academic\CourseEvent;
+use App\Models\Academic\CourseMaterial;
+use App\Models\Academic\CourseAnnouncement;
+use App\Models\Attendance\CourseAttendanceRecord;
+use App\Models\Gradebook\CourseGradeComponent;
+use App\Models\Gradebook\CourseGradeRecord;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -18,7 +27,7 @@ final class StudentCoursesService
     public function overview(Request $request): array
     {
         $user = $request->user();
-        $student = DB::table('students')->where('user_id', $user?->id)->first();
+        $student = Student::where('user_id', $user?->id)->first();
 
         if ($student === null) {
             return $this->emptyOverview();
@@ -47,7 +56,7 @@ final class StudentCoursesService
     public function detail(Request $request, string $courseId): ?array
     {
         $user = $request->user();
-        $student = DB::table('students')->where('user_id', $user?->id)->first();
+        $student = Student::where('user_id', $user?->id)->first();
 
         if ($student === null) {
             return null;
@@ -153,8 +162,7 @@ final class StudentCoursesService
 
     private function currentSemester(int $studentId): ?object
     {
-        return DB::table('student_enrollments')
-            ->join('semesters', 'semesters.id', '=', 'student_enrollments.semester_id')
+        return StudentEnrollment::join('semesters', 'semesters.id', '=', 'student_enrollments.semester_id')
             ->leftJoin('academic_years', 'academic_years.id', '=', 'semesters.academic_year_id')
             ->where('student_enrollments.student_id', $studentId)
             ->where('student_enrollments.status', '!=', 'dropped')
@@ -168,8 +176,7 @@ final class StudentCoursesService
 
     private function enrollmentBaseQuery(int $studentId): Builder
     {
-        return DB::table('student_enrollments')
-            ->join('courses', 'courses.id', '=', 'student_enrollments.course_id')
+        return StudentEnrollment::join('courses', 'courses.id', '=', 'student_enrollments.course_id')
             ->leftJoin('semesters', 'semesters.id', '=', 'student_enrollments.semester_id')
             ->leftJoin('academic_years', 'academic_years.id', '=', 'semesters.academic_year_id')
             ->leftJoin('course_schedules', 'course_schedules.course_id', '=', 'courses.id')
@@ -256,8 +263,7 @@ final class StudentCoursesService
      */
     private function semesterOptions(int $studentId): array
     {
-        return DB::table('student_enrollments')
-            ->join('semesters', 'semesters.id', '=', 'student_enrollments.semester_id')
+        return StudentEnrollment::join('semesters', 'semesters.id', '=', 'student_enrollments.semester_id')
             ->where('student_enrollments.student_id', $studentId)
             ->where('student_enrollments.status', '!=', 'dropped')
             ->select('semesters.name', 'semesters.is_current', 'semesters.number', 'semesters.id')
@@ -282,8 +288,7 @@ final class StudentCoursesService
             'completed' => 'Completed',
         ];
 
-        return DB::table('student_enrollments')
-            ->where('student_id', $studentId)
+        return StudentEnrollment::where('student_id', $studentId)
             ->where('status', '!=', 'dropped')
             ->select('status')
             ->distinct()
@@ -332,8 +337,7 @@ final class StudentCoursesService
      */
     private function upcomingDeadlines(int $studentId, Request $request): array
     {
-        $query = DB::table('student_enrollments')
-            ->join('courses', 'courses.id', '=', 'student_enrollments.course_id')
+        $query = StudentEnrollment::join('courses', 'courses.id', '=', 'student_enrollments.course_id')
             ->leftJoin('semesters', 'semesters.id', '=', 'student_enrollments.semester_id')
             ->join('course_events', 'course_events.course_id', '=', 'courses.id')
             ->leftJoin('course_professor', function ($join): void {
@@ -427,8 +431,7 @@ final class StudentCoursesService
 
     private function nextImportantEvent(int $courseId): ?object
     {
-        return DB::table('course_events')
-            ->where('course_id', $courseId)
+        return CourseEvent::where('course_id', $courseId)
             ->whereDate('event_date', '>=', Carbon::today()->toDateString())
             ->orderBy('event_date')
             ->orderBy('event_time')
@@ -459,8 +462,7 @@ final class StudentCoursesService
      */
     private function courseInfo(int $courseId): array
     {
-        $course = DB::table('courses')
-            ->leftJoin('semesters', 'semesters.id', '=', 'courses.semester_id')
+        $course = Course::leftJoin('semesters', 'semesters.id', '=', 'courses.semester_id')
             ->where('courses.id', $courseId)
             ->select('courses.ects', 'courses.room', 'courses.grading_breakdown', 'semesters.name as semester_name')
             ->first();
@@ -482,8 +484,7 @@ final class StudentCoursesService
      */
     private function materials(int $courseId): array
     {
-        return DB::table('course_materials')
-            ->where('course_id', $courseId)
+        return CourseMaterial::where('course_id', $courseId)
             ->orderByDesc('published_at')
             ->orderBy('id')
             ->get()
@@ -503,13 +504,12 @@ final class StudentCoursesService
      */
     private function attendance(int $enrollmentId): array
     {
-        $summary = DB::query()
+        $summary = CourseAttendanceRecord::query()
             ->fromSub($this->records->attendanceStatsSubquery(), 'attendance_stats')
             ->where('student_enrollment_id', $enrollmentId)
             ->first();
 
-        $records = DB::table('course_attendance_records')
-            ->where('student_enrollment_id', $enrollmentId)
+        $records = CourseAttendanceRecord::where('student_enrollment_id', $enrollmentId)
             ->orderByDesc('held_on')
             ->orderByDesc('id')
             ->limit(8)
@@ -557,8 +557,7 @@ final class StudentCoursesService
             'currentGrade' => $this->currentGradeLabel($course),
             'currentGradePoints' => $this->records->decimalLabel($course->numeric_grade),
             'scale' => '5-10 numeric scale',
-            'breakdown' => DB::table('course_grade_components')
-                ->where('course_id', $courseId)
+            'breakdown' => CourseGradeComponent::where('course_id', $courseId)
                 ->orderBy('id')
                 ->get()
                 ->map(fn (object $component): array => [
@@ -566,8 +565,7 @@ final class StudentCoursesService
                     'weight' => (int) $component->weight,
                 ])
                 ->all(),
-            'records' => DB::table('course_grade_records')
-                ->where('student_enrollment_id', $enrollmentId)
+            'records' => CourseGradeRecord::where('student_enrollment_id', $enrollmentId)
                 ->orderByDesc('graded_on')
                 ->orderByDesc('id')
                 ->get()
@@ -589,8 +587,7 @@ final class StudentCoursesService
      */
     private function events(int $courseId, string $category): Collection
     {
-        return DB::table('course_events')
-            ->where('course_id', $courseId)
+        return CourseEvent::where('course_id', $courseId)
             ->where('category', $category)
             ->orderBy('event_date')
             ->orderBy('event_time')
@@ -641,8 +638,7 @@ final class StudentCoursesService
      */
     private function announcements(int $courseId): array
     {
-        return DB::table('course_announcements')
-            ->where('course_id', $courseId)
+        return CourseAnnouncement::where('course_id', $courseId)
             ->orderByDesc('published_on')
             ->orderByDesc('id')
             ->get()

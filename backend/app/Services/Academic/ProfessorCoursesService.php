@@ -3,7 +3,7 @@
 namespace App\Services\Academic;
 
 use App\Models\Identity\User;
-use App\Models\Attendance\CourseAttendanceSummary;
+use App\Models\Attendance\CourseAttendanceRecord;
 use App\Models\Gradebook\CourseGradeRecord;
 use App\Models\Gradebook\StudentEnrollment;
 
@@ -22,17 +22,25 @@ final class ProfessorCoursesService
             return [];
         }
 
-        $courses = $professor->courses()->with(['schedules', 'enrollments.attendanceSummary'])->get();
+        $courses = $professor->courses()->with(['schedules', 'enrollments', 'semester'])->get();
 
         $courseList = $courses->values()->map(function (object $course, int $index): array {
             $studentCount = StudentEnrollment::where('course_id', $course->id)
                 ->where('status', 'active')
                 ->count();
 
-            $averageAttendance = CourseAttendanceSummary::whereHas(
+            $attendanceStats = CourseAttendanceRecord::whereHas(
                 'enrollment',
                 fn ($q) => $q->where('course_id', $course->id)
-            )->avg(\DB::raw('CASE WHEN sessions_held > 0 THEN (sessions_attended * 100.0 / sessions_held) ELSE 100 END')) ?? 0;
+            )->whereIn('status', ['present', 'absent', 'late', 'recorded'])
+            ->selectRaw('COUNT(*) as total_sessions')
+            ->selectRaw("SUM(CASE WHEN status in ('present', 'late', 'recorded') THEN 1 ELSE 0 END) as sessions_attended")
+            ->first();
+
+            $averageAttendance = 100;
+            if ($attendanceStats && $attendanceStats->total_sessions > 0) {
+                $averageAttendance = ($attendanceStats->sessions_attended * 100.0) / $attendanceStats->total_sessions;
+            }
 
             $averageGrade = CourseGradeRecord::whereHas(
                 'enrollment',
@@ -46,9 +54,7 @@ final class ProfessorCoursesService
             )->whereNull('grade')->count();
 
             // Derive semester name from the course's linked semester
-            $semesterName = \Illuminate\Support\Facades\DB::table('semesters')
-                ->where('id', $course->semester_id)
-                ->value('name') ?? 'Current Semester';
+            $semesterName = $course->semester?->name ?? 'Current Semester';
 
             // Derive status from the course model's own status field
             $courseStatus = match ((string) ($course->status ?? 'active')) {

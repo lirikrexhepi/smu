@@ -4,7 +4,9 @@ namespace App\Services;
 
 use App\Models\Academic\Course;
 use App\Models\Identity\User;
-use Illuminate\Support\Facades\DB;
+use App\Models\Identity\Department;
+use App\Models\Gradebook\CourseGradeRecord;
+use App\Models\Attendance\CourseAttendanceRecord;
 
 final class AdminDashboardService
 {
@@ -19,21 +21,18 @@ final class AdminDashboardService
         $totalCourses = Course::count();
 
         // Calculate average attendance rate
-        $attendanceStats = DB::table('course_attendance_records')
-            ->selectRaw('SUM(CASE WHEN status IN ("present", "late") THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(*), 0) as rate')
+        $attendanceStats = CourseAttendanceRecord::selectRaw('SUM(CASE WHEN status IN ("present", "late") THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(*), 0) as rate')
             ->first();
         $overallAttendanceRate = $attendanceStats?->rate ?? 100;
 
         // Calculate campus average GPA
-        $gpaStats = DB::table('course_grade_records')
-            ->whereNotNull('grade')
+        $gpaStats = CourseGradeRecord::whereNotNull('grade')
             ->avg('grade') ?? 0;
 
         // 2. Grade Distribution (5 to 10 scale)
-        $rawGradeCounts = DB::table('course_grade_records')
-            ->whereNotNull('grade')
+        $rawGradeCounts = CourseGradeRecord::whereNotNull('grade')
             ->selectRaw('ROUND(grade) as score, COUNT(*) as count')
-            ->groupBy('score')
+            ->groupByRaw('ROUND(grade)')
             ->pluck('count', 'score')
             ->all();
 
@@ -61,8 +60,7 @@ final class AdminDashboardService
         }
 
         // 3. Department Statistics
-        $departmentStats = DB::table('departments')
-            ->leftJoin('users', function ($join): void {
+        $departmentStats = Department::leftJoin('users', function ($join): void {
                 $join->on('users.department_id', '=', 'departments.id')
                      ->where('users.role', '=', 'student');
             })

@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Skeleton } from '@/components/ui/skeleton'
 import { listAdminUsers, getAdminOptions, getAdminUser, createAdminUser, updateAdminUser, deleteAdminUser } from '@/lib/api/admin'
+import { useToast } from '@/components/ui/toast'
 
 type UserListItem = {
   id: number
@@ -68,7 +69,9 @@ const initialForm = {
 }
 
 export function AdminUsersPage() {
+  const { success: toastSuccess, error: toastError } = useToast()
   const [users, setUsers] = useState<UserListItem[]>([])
+
   const [meta, setMeta] = useState<any>({ current_page: 1, last_page: 1, total: 0 })
   const [filters, setFilters] = useState({ search: '', role: 'all', faculty_id: 'all', department_id: 'all', page: 1 })
   const [options, setOptions] = useState<OptionsData>({ faculties: [], departments: [], programs: [], semesters: [], professors: [] })
@@ -163,18 +166,21 @@ export function AdminUsersPage() {
         setSubmitting(false)
       })
       .catch((err) => {
-        alert(err instanceof Error ? err.message : 'Failed to retrieve user details')
+        toastError(err instanceof Error ? err.message : 'Failed to retrieve user details')
         setSubmitting(false)
       })
+
   }
 
   const handleDelete = (user: UserListItem) => {
     if (confirm(`Are you sure you want to delete user "${user.name}"? This action is permanent.`)) {
       deleteAdminUser(user.id)
         .then(() => {
+          toastSuccess('User deleted successfully')
           fetchUsers()
         })
-        .catch((err) => alert(err instanceof Error ? err.message : 'Delete failed'))
+        .catch((err) => toastError(err instanceof Error ? err.message : 'Delete failed'))
+
     }
   }
 
@@ -222,6 +228,7 @@ export function AdminUsersPage() {
 
     request
       .then(() => {
+        toastSuccess(isEditing ? 'User updated successfully' : 'User registered successfully')
         setModalOpen(false)
         fetchUsers()
       })
@@ -229,10 +236,11 @@ export function AdminUsersPage() {
         if (err && err.errors) {
           setFormErrors(err.errors)
         } else {
-          alert(err instanceof Error ? err.message : 'Submit failed')
+          toastError(err instanceof Error ? err.message : 'Submit failed')
         }
       })
       .finally(() => setSubmitting(false))
+
   }
 
   const updateField = (key: string, val: string) => {

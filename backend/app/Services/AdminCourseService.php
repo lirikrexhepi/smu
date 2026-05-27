@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Academic\Course;
 use App\Models\Academic\CourseSchedule;
+use App\Models\Gradebook\StudentEnrollment;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -17,7 +18,7 @@ final readonly class AdminCourseService
      */
     public function listCourses(array $filters): array
     {
-        $query = Course::with(['department', 'semester']);
+        $query = Course::with(['department', 'semester', 'professors.user', 'schedules']);
 
         if (!empty($filters['search'])) {
             $search = '%' . $filters['search'] . '%';
@@ -38,21 +39,13 @@ final readonly class AdminCourseService
         $courses = $query->orderBy('id', 'desc')->paginate(15);
 
         $mappedItems = collect($courses->items())->map(function (Course $course): array {
-            $studentCount = DB::table('student_enrollments')
-                ->where('course_id', $course->id)
+            $studentCount = StudentEnrollment::where('course_id', $course->id)
                 ->where('status', 'active')
                 ->count();
 
-            $professors = DB::table('course_professor')
-                ->join('professors', 'professors.id', '=', 'course_professor.professor_id')
-                ->join('users', 'users.id', '=', 'professors.user_id')
-                ->where('course_professor.course_id', $course->id)
-                ->pluck('users.name')
-                ->all();
+            $professors = $course->professors->map(fn($p) => $p->user?->name)->filter()->values()->all();
 
-            $schedule = DB::table('course_schedules')
-                ->where('course_id', $course->id)
-                ->first();
+            $schedule = $course->schedules->first();
 
             return [
                 'id' => $course->id,
@@ -89,20 +82,15 @@ final readonly class AdminCourseService
      */
     public function getCourse(int $id): array
     {
-        $course = Course::with(['department', 'semester'])->findOrFail($id);
+        $course = Course::with(['department', 'semester', 'professors', 'schedules'])->findOrFail($id);
 
-        $assignedProfessors = DB::table('course_professor')
-            ->where('course_id', $course->id)
-            ->pluck('professor_id')
-            ->all();
+        $assignedProfessors = $course->professors->pluck('id')->all();
 
-        $schedule = DB::table('course_schedules')
-            ->where('course_id', $course->id)
-            ->first();
+        $schedule = $course->schedules->first();
 
         $days = [];
         if ($schedule && $schedule->days) {
-            $days = json_decode($schedule->days, true) ?? [];
+            $days = is_string($schedule->days) ? (json_decode($schedule->days, true) ?? []) : $schedule->days;
         }
 
         return [
@@ -153,15 +141,11 @@ final readonly class AdminCourseService
 
             // Assign professors
             if (!empty($data['professor_ids'])) {
+                $syncData = [];
                 foreach ($data['professor_ids'] as $profId) {
-                    DB::table('course_professor')->insert([
-                        'course_id' => $course->id,
-                        'professor_id' => $profId,
-                        'role' => 'instructor',
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
+                    $syncData[$profId] = ['role' => 'instructor'];
                 }
+                $course->professors()->sync($syncData);
             }
 
             // Create schedule if present
@@ -174,17 +158,14 @@ final readonly class AdminCourseService
                 $daysLabel = implode(', ', $daysShort);
                 $timeLabel = "$starts - $ends";
 
-                DB::table('course_schedules')->insert([
-                    'course_id' => $course->id,
+                $course->schedules()->create([
                     'days_label' => $daysLabel,
-                    'days' => json_encode($days),
+                    'days' => $days,
                     'time_label' => $timeLabel,
                     'starts_at' => $starts,
                     'ends_at' => $ends,
                     'room' => $data['room'] ?? null,
                     'label' => 'Lecture',
-                    'created_at' => now(),
-                    'updated_at' => now(),
                 ]);
             }
 
@@ -215,21 +196,16 @@ final readonly class AdminCourseService
             ]);
 
             // Sync professors
-            DB::table('course_professor')->where('course_id', $course->id)->delete();
+            $syncData = [];
             if (!empty($data['professor_ids'])) {
                 foreach ($data['professor_ids'] as $profId) {
-                    DB::table('course_professor')->insert([
-                        'course_id' => $course->id,
-                        'professor_id' => $profId,
-                        'role' => 'instructor',
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
+                    $syncData[$profId] = ['role' => 'instructor'];
                 }
             }
+            $course->professors()->sync($syncData);
 
             // Sync schedule
-            DB::table('course_schedules')->where('course_id', $course->id)->delete();
+            $course->schedules()->delete();
             if (!empty($data['schedule']['days'])) {
                 $days = $data['schedule']['days'];
                 $starts = $data['schedule']['starts_at'] ?? '09:00';
@@ -239,17 +215,14 @@ final readonly class AdminCourseService
                 $daysLabel = implode(', ', $daysShort);
                 $timeLabel = "$starts - $ends";
 
-                DB::table('course_schedules')->insert([
-                    'course_id' => $course->id,
+                $course->schedules()->create([
                     'days_label' => $daysLabel,
-                    'days' => json_encode($days),
+                    'days' => $days,
                     'time_label' => $timeLabel,
                     'starts_at' => $starts,
                     'ends_at' => $ends,
                     'room' => $data['room'] ?? null,
                     'label' => 'Lecture',
-                    'created_at' => now(),
-                    'updated_at' => now(),
                 ]);
             }
 
@@ -266,9 +239,9 @@ final readonly class AdminCourseService
             $course = Course::findOrFail($id);
 
             // Delete dependencies explicitly to prevent FK blocks
-            DB::table('course_professor')->where('course_id', $id)->delete();
-            DB::table('course_schedules')->where('course_id', $id)->delete();
-            DB::table('student_enrollments')->where('course_id', $id)->delete();
+            $course->professors()->detach();
+            $course->schedules()->delete();
+            StudentEnrollment::where('course_id', $id)->delete();
 
             $course->delete();
         });

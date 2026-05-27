@@ -21,8 +21,7 @@ final class UpdateUserRequest extends FormRequest
         // Find the student ID if applicable to ignore unique validation
         $studentId = null;
         if ($userId) {
-            $studentId = \Illuminate\Support\Facades\DB::table('students')
-                ->where('user_id', $userId)
+            $studentId = \App\Models\Identity\Student::where('user_id', $userId)
                 ->value('id');
         }
 

@@ -2,8 +2,9 @@
 
 namespace App\Services;
 
-use Illuminate\Database\Query\Builder;
-use Illuminate\Support\Facades\DB;
+use App\Models\Gradebook\CourseGradeRecord;
+use App\Models\Attendance\CourseAttendanceRecord;
+use Illuminate\Database\Eloquent\Builder;
 
 final class StudentAcademicRecordsService
 {
@@ -11,7 +12,7 @@ final class StudentAcademicRecordsService
 
     public function gradeAveragesSubquery(): Builder
     {
-        return DB::table('course_grade_records')
+        return CourseGradeRecord::query()
             ->whereNotNull('grade')
             ->select('student_enrollment_id')
             ->selectRaw('ROUND((SUM(grade * COALESCE(weight, 1)) * 1.0) / NULLIF(SUM(COALESCE(weight, 1)), 0), 2) as numeric_grade')
@@ -22,7 +23,7 @@ final class StudentAcademicRecordsService
 
     public function attendanceStatsSubquery(): Builder
     {
-        return DB::table('course_attendance_records')
+        return CourseAttendanceRecord::query()
             ->whereIn('status', ['present', 'absent', 'late', 'recorded'])
             ->select('student_enrollment_id')
             ->selectRaw('COUNT(*) as total_sessions')

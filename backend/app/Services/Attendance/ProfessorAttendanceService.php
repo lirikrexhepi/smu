@@ -4,7 +4,7 @@ namespace App\Services\Attendance;
 
 use App\Models\Identity\User;
 use App\Models\Gradebook\StudentEnrollment;
-use App\Models\Attendance\CourseAttendanceSummary;
+use App\Models\Attendance\CourseAttendanceRecord;
 use App\Models\Attendance\AttendanceSession;
 
 final class ProfessorAttendanceService
@@ -56,10 +56,18 @@ final class ProfessorAttendanceService
 
         // 2. Fetch course-by-course attendance rates
         $coursesList = $courses->map(function (object $course): array {
-            $averageAttendance = CourseAttendanceSummary::whereHas(
+            $attendanceStats = CourseAttendanceRecord::whereHas(
                 'enrollment',
                 fn ($q) => $q->where('course_id', $course->id)
-            )->avg(\DB::raw('CASE WHEN sessions_held > 0 THEN (sessions_attended * 100.0 / sessions_held) ELSE 100 END')) ?? 100;
+            )->whereIn('status', ['present', 'absent', 'late', 'recorded'])
+            ->selectRaw('COUNT(*) as total_sessions')
+            ->selectRaw("SUM(CASE WHEN status in ('present', 'late', 'recorded') THEN 1 ELSE 0 END) as sessions_attended")
+            ->first();
+
+            $averageAttendance = 100;
+            if ($attendanceStats && $attendanceStats->total_sessions > 0) {
+                $averageAttendance = ($attendanceStats->sessions_attended * 100.0) / $attendanceStats->total_sessions;
+            }
 
             return [
                 'id'             => (string) $course->course_key,

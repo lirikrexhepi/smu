@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Identity\User;
 use App\Models\Identity\Student;
 use App\Models\Identity\Professor;
+use App\Models\Identity\StudentEmergencyContact;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -52,14 +53,14 @@ final readonly class AdminUserService
             $details = [];
 
             if ($user->role === 'student') {
-                $student = DB::table('students')->where('user_id', $user->id)->first();
+                $student = Student::where('user_id', $user->id)->first();
                 $details = [
                     'studentId' => $student?->student_number,
                     'status' => $student?->status ?? 'Active',
                     'yearOfStudy' => $student?->year_of_study,
                 ];
             } elseif ($user->role === 'professor') {
-                $prof = DB::table('professors')->where('user_id', $user->id)->first();
+                $prof = Professor::where('user_id', $user->id)->first();
                 $details = [
                     'title' => $prof?->title,
                     'office' => $prof?->office,
@@ -111,10 +112,9 @@ final readonly class AdminUserService
         ];
 
         if ($user->role === 'student') {
-            $student = DB::table('students')->where('user_id', $user->id)->first();
+            $student = Student::where('user_id', $user->id)->first();
             if ($student) {
-                $contact = DB::table('student_emergency_contacts')
-                    ->where('student_id', $student->id)
+                $contact = StudentEmergencyContact::where('student_id', $student->id)
                     ->where('is_primary', true)
                     ->first();
 
@@ -135,7 +135,7 @@ final readonly class AdminUserService
                 ]);
             }
         } elseif ($user->role === 'professor') {
-            $prof = DB::table('professors')->where('user_id', $user->id)->first();
+            $prof = Professor::where('user_id', $user->id)->first();
             if ($prof) {
                 $result = array_merge($result, [
                     'title' => $prof->title,
@@ -163,15 +163,25 @@ final readonly class AdminUserService
                 'professor' => 'PROF',
                 'admin' => 'ADM',
             };
-            $lastId = DB::table('users')->where('role', $role)->where('institution_id', 'like', "$prefix-%")->orderBy('id', 'desc')->value('institution_id');
-            $nextNum = 1001;
-            if ($lastId) {
-                $num = (int) filter_var($lastId, FILTER_SANITIZE_NUMBER_INT);
-                if ($num > 0) {
-                    $nextNum = $num + 1;
+            
+            $existingIds = User::where('role', $role)
+                ->where('institution_id', 'like', "$prefix-%")
+                ->pluck('institution_id')
+                ->all();
+
+            $maxNum = 1000;
+            foreach ($existingIds as $existingId) {
+                preg_match('/\d+/', $existingId, $matches);
+                if (isset($matches[0])) {
+                    $num = (int) $matches[0];
+                    if ($num > $maxNum) {
+                        $maxNum = $num;
+                    }
                 }
             }
+            $nextNum = $maxNum + 1;
             $institutionId = "$prefix-$nextNum";
+
 
             // 2. Create User
             $user = User::create([
@@ -187,7 +197,7 @@ final readonly class AdminUserService
 
             // 3. Create role-specific dependent records
             if ($role === 'student') {
-                $studentId = DB::table('students')->insertGetId([
+                $student = Student::create([
                     'user_id' => $user->id,
                     'program_id' => $data['program_id'] ?? null,
                     'student_number' => $institutionId,
@@ -202,30 +212,24 @@ final readonly class AdminUserService
                     'nationality' => $data['nationality'] ?? null,
                     'personal_number' => $data['personal_number'] ?? null,
                     'profile_updated_at' => now(),
-                    'created_at' => now(),
-                    'updated_at' => now(),
                 ]);
 
                 if (!empty($data['emergency_contact_name'])) {
-                    DB::table('student_emergency_contacts')->insert([
-                        'student_id' => $studentId,
+                    StudentEmergencyContact::create([
+                        'student_id' => $student->id,
                         'name' => $data['emergency_contact_name'],
                         'relationship' => $data['emergency_contact_relationship'] ?? 'Parent',
                         'phone' => $data['emergency_contact_phone'] ?? '',
                         'is_primary' => true,
-                        'created_at' => now(),
-                        'updated_at' => now(),
                     ]);
                 }
             } elseif ($role === 'professor') {
-                DB::table('professors')->insert([
+                Professor::create([
                     'user_id' => $user->id,
                     'title' => $data['title'] ?? 'Assistant Professor',
                     'office' => $data['office'] ?? null,
                     'office_hours' => $data['office_hours'] ?? null,
                     'consultation' => $data['consultation'] ?? null,
-                    'created_at' => now(),
-                    'updated_at' => now(),
                 ]);
             }
 
@@ -257,45 +261,38 @@ final readonly class AdminUserService
 
             // Update dependent fields
             if ($user->role === 'student') {
-                $student = DB::table('students')->where('user_id', $user->id)->first();
+                $student = Student::where('user_id', $user->id)->first();
                 if ($student) {
-                    DB::table('students')
-                        ->where('id', $student->id)
-                        ->update([
-                            'program_id' => $data['program_id'] ?? $student->program_id,
-                            'year_of_study' => $data['year_of_study'] ?? $student->year_of_study,
-                            'phone' => $data['phone'] ?? $student->phone,
-                            'address' => $data['address'] ?? $student->address,
-                            'date_of_birth' => $data['date_of_birth'] ?? $student->date_of_birth,
-                            'gender' => $data['gender'] ?? $student->gender,
-                            'nationality' => $data['nationality'] ?? $student->nationality,
-                            'personal_number' => $data['personal_number'] ?? $student->personal_number,
-                            'profile_updated_at' => now(),
-                            'updated_at' => now(),
-                        ]);
+                    $student->update([
+                        'program_id' => $data['program_id'] ?? $student->program_id,
+                        'year_of_study' => $data['year_of_study'] ?? $student->year_of_study,
+                        'phone' => $data['phone'] ?? $student->phone,
+                        'address' => $data['address'] ?? $student->address,
+                        'date_of_birth' => $data['date_of_birth'] ?? $student->date_of_birth,
+                        'gender' => $data['gender'] ?? $student->gender,
+                        'nationality' => $data['nationality'] ?? $student->nationality,
+                        'personal_number' => $data['personal_number'] ?? $student->personal_number,
+                        'profile_updated_at' => now(),
+                    ]);
 
                     if (!empty($data['emergency_contact_name'])) {
-                        DB::table('student_emergency_contacts')
-                            ->updateOrInsert(
-                                ['student_id' => $student->id, 'is_primary' => true],
-                                [
-                                    'name' => $data['emergency_contact_name'],
-                                    'relationship' => $data['emergency_contact_relationship'] ?? 'Parent',
-                                    'phone' => $data['emergency_contact_phone'] ?? '',
-                                    'updated_at' => now(),
-                                ]
-                            );
+                        StudentEmergencyContact::updateOrCreate(
+                            ['student_id' => $student->id, 'is_primary' => true],
+                            [
+                                'name' => $data['emergency_contact_name'],
+                                'relationship' => $data['emergency_contact_relationship'] ?? 'Parent',
+                                'phone' => $data['emergency_contact_phone'] ?? '',
+                            ]
+                        );
                     }
                 }
             } elseif ($user->role === 'professor') {
-                DB::table('professors')
-                    ->where('user_id', $user->id)
+                Professor::where('user_id', $user->id)
                     ->update([
                         'title' => $data['title'] ?? 'Assistant Professor',
                         'office' => $data['office'] ?? null,
                         'office_hours' => $data['office_hours'] ?? null,
                         'consultation' => $data['consultation'] ?? null,
-                        'updated_at' => now(),
                     ]);
             }
 
@@ -314,13 +311,13 @@ final readonly class AdminUserService
 
             // Cascade delete will delete dependent elements, but let's clear them explicitly to be safe
             if ($userRole === 'student') {
-                $student = DB::table('students')->where('user_id', $user->id)->first();
+                $student = Student::where('user_id', $user->id)->first();
                 if ($student) {
-                    DB::table('student_emergency_contacts')->where('student_id', $student->id)->delete();
-                    DB::table('students')->where('id', $student->id)->delete();
+                    $student->emergencyContacts()->delete();
+                    $student->delete();
                 }
             } elseif ($userRole === 'professor') {
-                DB::table('professors')->where('user_id', $user->id)->delete();
+                Professor::where('user_id', $user->id)->delete();
             }
 
             $user->delete();

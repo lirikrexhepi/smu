@@ -2,6 +2,10 @@
 
 namespace App\Services;
 
+use App\Models\Identity\Student;
+use App\Models\Gradebook\StudentEnrollment;
+use App\Models\Attendance\CourseAttendanceRecord;
+use App\Models\Attendance\AttendanceHistoryRecord;
 use App\Models\Identity\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -18,7 +22,7 @@ final class StudentAttendanceService
     public function forRequest(Request $request): array
     {
         $user = $request->user();
-        $student = DB::table('students')->where('user_id', $user?->id)->first();
+        $student = Student::where('user_id', $user?->id)->first();
 
         if ($student === null) {
             return $this->emptyResponse($user);
@@ -51,8 +55,7 @@ final class StudentAttendanceService
     {
         $requested = trim($requested);
 
-        $query = DB::table('student_enrollments')
-            ->join('semesters', 'semesters.id', '=', 'student_enrollments.semester_id')
+        $query = StudentEnrollment::join('semesters', 'semesters.id', '=', 'student_enrollments.semester_id')
             ->leftJoin('academic_years', 'academic_years.id', '=', 'semesters.academic_year_id')
             ->where('student_enrollments.student_id', $studentId)
             ->where('student_enrollments.status', '!=', 'dropped')
@@ -87,8 +90,7 @@ final class StudentAttendanceService
             return null;
         }
 
-        return DB::table('student_enrollments')
-            ->join('courses', 'courses.id', '=', 'student_enrollments.course_id')
+        return StudentEnrollment::join('courses', 'courses.id', '=', 'student_enrollments.course_id')
             ->where('student_enrollments.student_id', $studentId)
             ->where('student_enrollments.status', '!=', 'dropped')
             ->when($semesterId !== null, fn ($query) => $query->where('student_enrollments.semester_id', $semesterId))
@@ -136,8 +138,7 @@ final class StudentAttendanceService
      */
     private function semesterOptions(int $studentId): array
     {
-        return DB::table('student_enrollments')
-            ->join('semesters', 'semesters.id', '=', 'student_enrollments.semester_id')
+        return StudentEnrollment::join('semesters', 'semesters.id', '=', 'student_enrollments.semester_id')
             ->where('student_enrollments.student_id', $studentId)
             ->where('student_enrollments.status', '!=', 'dropped')
             ->select('semesters.name', 'semesters.is_current', 'semesters.number', 'semesters.id')
@@ -155,8 +156,7 @@ final class StudentAttendanceService
      */
     private function courseOptions(int $studentId, ?int $semesterId): array
     {
-        return DB::table('student_enrollments')
-            ->join('courses', 'courses.id', '=', 'student_enrollments.course_id')
+        return StudentEnrollment::join('courses', 'courses.id', '=', 'student_enrollments.course_id')
             ->where('student_enrollments.student_id', $studentId)
             ->where('student_enrollments.status', '!=', 'dropped')
             ->when($semesterId !== null, fn ($query) => $query->where('student_enrollments.semester_id', $semesterId))
@@ -218,8 +218,7 @@ final class StudentAttendanceService
 
     private function attendanceAggregate(int $studentId, ?int $courseId, ?int $semesterId): ?object
     {
-        return DB::table('course_attendance_records')
-            ->join('student_enrollments', 'student_enrollments.id', '=', 'course_attendance_records.student_enrollment_id')
+        return CourseAttendanceRecord::join('student_enrollments', 'student_enrollments.id', '=', 'course_attendance_records.student_enrollment_id')
             ->join('courses', 'courses.id', '=', 'student_enrollments.course_id')
             ->where('student_enrollments.student_id', $studentId)
             ->where('student_enrollments.status', '!=', 'dropped')
@@ -239,8 +238,7 @@ final class StudentAttendanceService
      */
     private function lastRecorded(int $studentId, ?int $courseId, ?int $semesterId): ?array
     {
-        $record = DB::table('course_attendance_records')
-            ->join('student_enrollments', 'student_enrollments.id', '=', 'course_attendance_records.student_enrollment_id')
+        $record = CourseAttendanceRecord::join('student_enrollments', 'student_enrollments.id', '=', 'course_attendance_records.student_enrollment_id')
             ->join('courses', 'courses.id', '=', 'student_enrollments.course_id')
             ->where('student_enrollments.student_id', $studentId)
             ->whereIn('course_attendance_records.status', ['present', 'absent', 'late', 'recorded'])
@@ -319,8 +317,7 @@ final class StudentAttendanceService
 
     private function derivedScheduleBlocks(int $studentId, object $week, ?int $courseId, ?int $semesterId): Collection
     {
-        $schedules = DB::table('student_enrollments')
-            ->join('courses', 'courses.id', '=', 'student_enrollments.course_id')
+        $schedules = StudentEnrollment::join('courses', 'courses.id', '=', 'student_enrollments.course_id')
             ->join('course_schedules', 'course_schedules.course_id', '=', 'courses.id')
             ->leftJoin('course_professor', function ($join): void {
                 $join->on('course_professor.course_id', '=', 'courses.id')
@@ -347,8 +344,7 @@ final class StudentAttendanceService
             )
             ->get();
 
-        $records = DB::table('course_attendance_records')
-            ->whereIn('student_enrollment_id', $schedules->pluck('enrollment_id')->all())
+        $records = CourseAttendanceRecord::whereIn('student_enrollment_id', $schedules->pluck('enrollment_id')->all())
             ->whereBetween('held_on', [$week->starts_on, $week->ends_on])
             ->get()
             ->keyBy(fn (object $record): string => $record->student_enrollment_id.'|'.$record->held_on);
@@ -419,8 +415,7 @@ final class StudentAttendanceService
      */
     private function history(int $studentId, ?int $courseId, ?int $semesterId): array
     {
-        return DB::table('attendance_history_records')
-            ->join('courses', 'courses.id', '=', 'attendance_history_records.course_id')
+        return AttendanceHistoryRecord::join('courses', 'courses.id', '=', 'attendance_history_records.course_id')
             ->where('attendance_history_records.student_id', $studentId)
             ->when($courseId !== null, fn ($query) => $query->where('attendance_history_records.course_id', $courseId))
             ->when($semesterId !== null, fn ($query) => $query->where('courses.semester_id', $semesterId))
@@ -440,7 +435,7 @@ final class StudentAttendanceService
                 'courseCode' => (string) $record->course_code,
                 'courseName' => (string) $record->course_name,
                 'date' => (string) ($record->date_label ?: $this->dateLabel($record->recorded_on)),
-                'dateIso' => (string) ($record->recorded_on ?? ''),
+                'dateIso' => $record->recorded_on ? (is_string($record->recorded_on) ? $record->recorded_on : $record->recorded_on->toDateString()) : '',
                 'time' => (string) ($record->time_label ?? ''),
                 'type' => (string) ($record->type ?? ''),
                 'professor' => (string) ($record->professor_name ?? ''),

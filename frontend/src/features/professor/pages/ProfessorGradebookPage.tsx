@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { getProfessorGradebook, saveStudentGrade } from '@/lib/api/professor'
 import { cn } from '@/lib/utils'
+import { useToast } from '@/components/ui/toast'
 
 type GradebookRow = {
   id: string
@@ -33,6 +34,7 @@ type Assessment = {
 }
 
 export function ProfessorGradebookPage() {
+  const toast = useToast()
   const [query, setQuery] = useState('')
   const [gradebook, setGradebook] = useState<GradebookRow[]>([])
   const [assessments, setAssessments] = useState<Assessment[]>([])
@@ -91,7 +93,7 @@ export function ProfessorGradebookPage() {
 
     const parsedGrade = parseFloat(newGradeVal)
     if (isNaN(parsedGrade) || parsedGrade < 0 || parsedGrade > 10) {
-      alert('Please enter a valid numeric grade between 0 and 10.')
+      toast.error('Please enter a valid numeric grade between 0 and 10.')
       return
     }
 
@@ -104,6 +106,7 @@ export function ProfessorGradebookPage() {
     })
       .then((res) => {
         if (res.success) {
+          toast.success('Grade updated successfully.')
           setEditingGrade(null)
           // Fetch updated data to recalculate dynamic values
           getProfessorGradebook().then((res2) => {
@@ -112,11 +115,11 @@ export function ProfessorGradebookPage() {
             }
           })
         } else {
-          alert(res.message || 'Failed to save grade.')
+          toast.error(res.message || 'Failed to save grade.')
         }
       })
       .catch(() => {
-        alert('Error connecting to the server.')
+        toast.error('Error connecting to the server.')
       })
       .finally(() => {
         setSavingGrade(false)

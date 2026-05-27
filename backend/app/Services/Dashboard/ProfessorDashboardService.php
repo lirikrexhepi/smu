@@ -4,7 +4,7 @@ namespace App\Services\Dashboard;
 
 use App\Models\Identity\User;
 use App\Models\Gradebook\StudentEnrollment;
-use App\Models\Attendance\CourseAttendanceSummary;
+use App\Models\Attendance\CourseAttendanceRecord;
 use App\Models\Gradebook\CourseGradeRecord;
 use App\Models\Academic\CourseSchedule;
 use App\Models\Academic\CourseEvent;
@@ -33,10 +33,18 @@ final class ProfessorDashboardService
             ->where('status', 'active')
             ->count();
 
-        $averageAttendance = CourseAttendanceSummary::whereHas(
+        $attendanceStats = CourseAttendanceRecord::whereHas(
             'enrollment',
             fn ($q) => $q->whereIn('course_id', $courseIds)
-        )->avg(DB::raw('CASE WHEN sessions_held > 0 THEN (sessions_attended * 100.0 / sessions_held) ELSE 100 END')) ?? 0;
+        )->whereIn('status', ['present', 'absent', 'late', 'recorded'])
+        ->selectRaw('COUNT(*) as total_sessions')
+        ->selectRaw("SUM(CASE WHEN status in ('present', 'late', 'recorded') THEN 1 ELSE 0 END) as sessions_attended")
+        ->first();
+
+        $averageAttendance = 100;
+        if ($attendanceStats && $attendanceStats->total_sessions > 0) {
+            $averageAttendance = ($attendanceStats->sessions_attended * 100.0) / $attendanceStats->total_sessions;
+        }
 
         // Pending grades = grade records that still have no grade value
         $pendingGrades = CourseGradeRecord::whereHas(
@@ -124,20 +132,17 @@ final class ProfessorDashboardService
             ->orderBy('event_date')
             ->get()
             ->map(function (CourseEvent $event) use ($courseIds): array {
-                $total = DB::table('student_enrollments')
-                    ->where('course_id', $event->course_id)
+                $total = StudentEnrollment::where('course_id', $event->course_id)
                     ->whereIn('status', ['active', 'registered', 'upcoming', 'completed'])
                     ->count();
 
-                $graded = DB::table('course_grade_records')
-                    ->join('student_enrollments', 'course_grade_records.student_enrollment_id', '=', 'student_enrollments.id')
+                $graded = CourseGradeRecord::join('student_enrollments', 'course_grade_records.student_enrollment_id', '=', 'student_enrollments.id')
                     ->where('student_enrollments.course_id', $event->course_id)
                     ->where('course_grade_records.grade_key', $event->event_key)
                     ->whereNotNull('course_grade_records.grade')
                     ->count();
 
-                $submitted = DB::table('course_grade_records')
-                    ->join('student_enrollments', 'course_grade_records.student_enrollment_id', '=', 'student_enrollments.id')
+                $submitted = CourseGradeRecord::join('student_enrollments', 'course_grade_records.student_enrollment_id', '=', 'student_enrollments.id')
                     ->where('student_enrollments.course_id', $event->course_id)
                     ->where('course_grade_records.grade_key', $event->event_key)
                     ->count();
@@ -161,10 +166,18 @@ final class ProfessorDashboardService
                 ->where('status', 'active')
                 ->count();
 
-            $avgAttendance = CourseAttendanceSummary::whereHas(
+            $attendanceStats = CourseAttendanceRecord::whereHas(
                 'enrollment',
                 fn ($q) => $q->where('course_id', $course->id)
-            )->avg(DB::raw('CASE WHEN sessions_held > 0 THEN (sessions_attended * 100.0 / sessions_held) ELSE 100 END')) ?? 0;
+            )->whereIn('status', ['present', 'absent', 'late', 'recorded'])
+            ->selectRaw('COUNT(*) as total_sessions')
+            ->selectRaw("SUM(CASE WHEN status in ('present', 'late', 'recorded') THEN 1 ELSE 0 END) as sessions_attended")
+            ->first();
+
+            $avgAttendance = 100;
+            if ($attendanceStats && $attendanceStats->total_sessions > 0) {
+                $avgAttendance = ($attendanceStats->sessions_attended * 100.0) / $attendanceStats->total_sessions;
+            }
 
             $avgGrade = CourseGradeRecord::whereHas(
                 'enrollment',

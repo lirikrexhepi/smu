@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Skeleton } from '@/components/ui/skeleton'
 import { listAdminCourses, getAdminOptions, getAdminCourse, createAdminCourse, updateAdminCourse, deleteAdminCourse } from '@/lib/api/admin'
+import { useToast } from '@/components/ui/toast'
 
 type CourseListItem = {
   id: number
@@ -65,6 +66,7 @@ const initialForm = {
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
 export function AdminCoursesPage() {
+  const toast = useToast()
   const [courses, setCourses] = useState<CourseListItem[]>([])
   const [meta, setMeta] = useState<any>({ current_page: 1, last_page: 1, total: 0 })
   const [filters, setFilters] = useState({ search: '', department_id: 'all', semester_id: 'all', page: 1 })
@@ -152,7 +154,7 @@ export function AdminCoursesPage() {
         setSubmitting(false)
       })
       .catch((err) => {
-        alert(err instanceof Error ? err.message : 'Failed to retrieve course details')
+        toast.error(err instanceof Error ? err.message : 'Failed to retrieve course details')
         setSubmitting(false)
       })
   }
@@ -161,9 +163,10 @@ export function AdminCoursesPage() {
     if (confirm(`Are you sure you want to delete course "${course.name}" (${course.code})? Students currently enrolled will be affected. This action is permanent.`)) {
       deleteAdminCourse(course.id)
         .then(() => {
+          toast.success('Course deleted successfully')
           fetchCourses()
         })
-        .catch((err) => alert(err instanceof Error ? err.message : 'Delete failed'))
+        .catch((err) => toast.error(err instanceof Error ? err.message : 'Delete failed'))
     }
   }
 
@@ -253,6 +256,7 @@ export function AdminCoursesPage() {
 
     request
       .then(() => {
+        toast.success(isEditing ? 'Course updated successfully' : 'Course created successfully')
         setModalOpen(false)
         fetchCourses()
       })
@@ -260,7 +264,7 @@ export function AdminCoursesPage() {
         if (err && err.errors) {
           setFormErrors(err.errors)
         } else {
-          alert(err instanceof Error ? err.message : 'Submit failed')
+          toast.error(err instanceof Error ? err.message : 'Submit failed')
         }
       })
       .finally(() => setSubmitting(false))

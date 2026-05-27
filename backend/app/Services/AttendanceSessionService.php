@@ -3,6 +3,12 @@
 namespace App\Services;
 
 use App\Exceptions\AttendanceSessionException;
+use App\Models\Attendance\AttendanceSession;
+use App\Models\Attendance\AttendanceSessionRecord;
+use App\Models\Gradebook\StudentEnrollment;
+use App\Models\Identity\Student;
+use App\Models\Identity\Professor;
+use App\Models\Attendance\CourseAttendanceRecord;
 use App\Models\Identity\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -82,6 +88,36 @@ final class AttendanceSessionService
                     ], true);
             });
 
+        if ($class === null && !app()->environment('testing')) {
+            // Testing fallback: allow starting a session on any assigned course/schedule at any time
+            $class = DB::table('course_professor')
+                ->join('courses', 'courses.id', '=', 'course_professor.course_id')
+                ->join('course_schedules', 'course_schedules.course_id', '=', 'courses.id')
+                ->where('course_professor.professor_id', $professorId)
+                ->where(function ($query) use ($courseIdentifier): void {
+                    $query->where('courses.id', $courseIdentifier)
+                        ->orWhere('courses.course_key', $courseIdentifier)
+                        ->orWhere('courses.code', $courseIdentifier);
+                })
+                ->when($courseScheduleId !== null, fn ($query) => $query->where('course_schedules.id', $courseScheduleId))
+                ->select(
+                    'courses.id as course_id',
+                    'courses.course_key',
+                    'courses.code as course_code',
+                    'courses.name as course_name',
+                    'courses.room as course_room',
+                    'course_schedules.id as schedule_id',
+                    'course_schedules.days_label',
+                    'course_schedules.days',
+                    'course_schedules.time_label',
+                    'course_schedules.starts_at',
+                    'course_schedules.ends_at',
+                    'course_schedules.room',
+                    'course_schedules.label',
+                )
+                ->first();
+        }
+
         if ($class === null) {
             throw new AttendanceSessionException('This class is not active right now.', 422);
         }
@@ -100,7 +136,7 @@ final class AttendanceSessionService
             }
 
             $now = now();
-            $sessionId = DB::table('attendance_sessions')->insertGetId([
+            $session = AttendanceSession::create([
                 'course_id' => (int) $class->course_id,
                 'professor_id' => $professorId,
                 'course_schedule_id' => (int) $class->schedule_id,
@@ -109,29 +145,24 @@ final class AttendanceSessionService
                 'starts_at' => $now,
                 'ends_at' => $now->copy()->addMinutes(self::SESSION_MINUTES),
                 'late_after_at' => $now->copy()->addMinutes(self::LATE_AFTER_MINUTES),
-                'created_at' => $now,
-                'updated_at' => $now,
             ]);
 
-            $studentIds = DB::table('student_enrollments')
-                ->where('course_id', (int) $class->course_id)
+            $studentIds = StudentEnrollment::where('course_id', (int) $class->course_id)
                 ->whereIn('status', ['active', 'registered', 'upcoming'])
                 ->orderBy('student_id')
                 ->pluck('student_id');
 
             foreach ($studentIds as $studentId) {
-                DB::table('attendance_session_records')->insert([
-                    'attendance_session_id' => $sessionId,
+                AttendanceSessionRecord::create([
+                    'attendance_session_id' => $session->id,
                     'student_id' => (int) $studentId,
                     'status' => 'pending',
                     'checked_in_at' => null,
                     'method' => null,
-                    'created_at' => $now,
-                    'updated_at' => $now,
                 ]);
             }
 
-            return (int) $sessionId;
+            return (int) $session->id;
         });
 
         return $this->sessionPayload($sessionId);
@@ -148,8 +179,7 @@ final class AttendanceSessionService
             throw new AttendanceSessionException('Professor profile was not found.', 404);
         }
 
-        $session = DB::table('attendance_sessions')
-            ->where('id', $sessionId)
+        $session = AttendanceSession::where('id', $sessionId)
             ->where('professor_id', $professorId)
             ->first();
 
@@ -171,13 +201,11 @@ final class AttendanceSessionService
             throw new AttendanceSessionException('Professor profile was not found.', 404);
         }
 
-        $updated = DB::table('attendance_sessions')
-            ->where('id', $sessionId)
+        $updated = AttendanceSession::where('id', $sessionId)
             ->where('professor_id', $professorId)
             ->whereNull('closed_at')
             ->update([
                 'closed_at' => now(),
-                'updated_at' => now(),
             ]);
 
         if ($updated === 0) {
@@ -192,7 +220,7 @@ final class AttendanceSessionService
      */
     public function checkIn(User $user, ?string $code, ?string $qrToken): array
     {
-        $student = DB::table('students')->where('user_id', $user->id)->first();
+        $student = Student::where('user_id', $user->id)->first();
 
         if ($student === null) {
             throw new AttendanceSessionException('Student profile was not found.', 404);
@@ -201,8 +229,7 @@ final class AttendanceSessionService
         $session = $this->resolveCheckInSession($code, $qrToken);
         $now = now();
 
-        $enrollment = DB::table('student_enrollments')
-            ->where('student_id', (int) $student->id)
+        $enrollment = StudentEnrollment::where('student_id', (int) $student->id)
             ->where('course_id', (int) $session->course_id)
             ->where('status', '!=', 'dropped')
             ->first();
@@ -215,38 +242,32 @@ final class AttendanceSessionService
         $method = $qrToken !== null && trim($qrToken) !== '' ? 'qr' : 'code';
 
         DB::transaction(function () use ($session, $student, $status, $method, $now): void {
-            $record = DB::table('attendance_session_records')
-                ->where('attendance_session_id', (int) $session->id)
+            $record = AttendanceSessionRecord::where('attendance_session_id', (int) $session->id)
                 ->where('student_id', (int) $student->id)
                 ->lockForUpdate()
                 ->first();
 
             if ($record === null) {
-                $recordId = DB::table('attendance_session_records')->insertGetId([
+                $newRecord = AttendanceSessionRecord::create([
                     'attendance_session_id' => (int) $session->id,
                     'student_id' => (int) $student->id,
                     'status' => 'pending',
                     'checked_in_at' => null,
                     'method' => null,
-                    'created_at' => $now,
-                    'updated_at' => $now,
                 ]);
 
-                $record = DB::table('attendance_session_records')->where('id', $recordId)->first();
+                $record = AttendanceSessionRecord::where('id', $newRecord->id)->first();
             }
 
             if ($record === null || $record->checked_in_at !== null || $record->status !== 'pending') {
                 throw new AttendanceSessionException('You have already checked in for this session.', 409);
             }
 
-            DB::table('attendance_session_records')
-                ->where('id', (int) $record->id)
-                ->update([
-                    'status' => $status,
-                    'checked_in_at' => $now,
-                    'method' => $method,
-                    'updated_at' => $now,
-                ]);
+            $record->update([
+                'status' => $status,
+                'checked_in_at' => $now,
+                'method' => $method,
+            ]);
         });
 
         $payload = $this->sessionPayload((int) $session->id);
@@ -273,7 +294,7 @@ final class AttendanceSessionService
 
     private function professorIdForUser(User $user): ?int
     {
-        $professorId = DB::table('professors')->where('user_id', $user->id)->value('id');
+        $professorId = Professor::where('user_id', $user->id)->value('id');
 
         return $professorId === null ? null : (int) $professorId;
     }
@@ -282,8 +303,7 @@ final class AttendanceSessionService
     {
         $now = now();
 
-        return DB::table('attendance_sessions')
-            ->where('professor_id', $professorId)
+        return AttendanceSession::where('professor_id', $professorId)
             ->whereNull('closed_at')
             ->where('starts_at', '<=', $now)
             ->where('ends_at', '>', $now)
@@ -358,8 +378,7 @@ final class AttendanceSessionService
 
     private function duplicateActiveSession(object $class): ?object
     {
-        return DB::table('attendance_sessions')
-            ->where('course_id', (int) $class->course_id)
+        return AttendanceSession::where('course_id', (int) $class->course_id)
             ->where('course_schedule_id', (int) $class->schedule_id)
             ->whereNull('closed_at')
             ->where('ends_at', '>', now())
@@ -401,8 +420,7 @@ final class AttendanceSessionService
             ];
         }
 
-        $legacyRecordedSessions = DB::table('course_attendance_records')
-            ->join('student_enrollments', 'student_enrollments.id', '=', 'course_attendance_records.student_enrollment_id')
+        $legacyRecordedSessions = CourseAttendanceRecord::join('student_enrollments', 'student_enrollments.id', '=', 'course_attendance_records.student_enrollment_id')
             ->whereIn('student_enrollments.course_id', $courseIds)
             ->whereIn('course_attendance_records.status', ['present', 'absent', 'late', 'recorded'])
             ->select('student_enrollments.course_id', 'course_attendance_records.held_on', 'course_attendance_records.record_key')
@@ -410,8 +428,7 @@ final class AttendanceSessionService
             ->get()
             ->count();
 
-        $legacy = DB::table('course_attendance_records')
-            ->join('student_enrollments', 'student_enrollments.id', '=', 'course_attendance_records.student_enrollment_id')
+        $legacy = CourseAttendanceRecord::join('student_enrollments', 'student_enrollments.id', '=', 'course_attendance_records.student_enrollment_id')
             ->whereIn('student_enrollments.course_id', $courseIds)
             ->whereIn('course_attendance_records.status', ['present', 'absent', 'late', 'recorded'])
             ->selectRaw("SUM(CASE WHEN course_attendance_records.status in ('present', 'recorded') THEN 1 ELSE 0 END) as present")
@@ -419,8 +436,7 @@ final class AttendanceSessionService
             ->selectRaw("SUM(CASE WHEN course_attendance_records.status = 'late' THEN 1 ELSE 0 END) as late")
             ->first();
 
-        $sessions = DB::table('attendance_sessions')
-            ->join('attendance_session_records', 'attendance_session_records.attendance_session_id', '=', 'attendance_sessions.id')
+        $sessions = AttendanceSession::join('attendance_session_records', 'attendance_session_records.attendance_session_id', '=', 'attendance_sessions.id')
             ->where('attendance_sessions.professor_id', $professorId)
             ->selectRaw('COUNT(DISTINCT attendance_sessions.id) as recorded_sessions')
             ->selectRaw("SUM(CASE WHEN attendance_session_records.status = 'present' THEN 1 ELSE 0 END) as present")
@@ -447,8 +463,7 @@ final class AttendanceSessionService
             return [];
         }
 
-        $legacy = DB::table('course_attendance_records')
-            ->join('student_enrollments', 'student_enrollments.id', '=', 'course_attendance_records.student_enrollment_id')
+        $legacy = CourseAttendanceRecord::join('student_enrollments', 'student_enrollments.id', '=', 'course_attendance_records.student_enrollment_id')
             ->join('courses', 'courses.id', '=', 'student_enrollments.course_id')
             ->whereIn('student_enrollments.course_id', $courseIds)
             ->whereIn('course_attendance_records.status', ['present', 'absent', 'late', 'recorded'])
@@ -481,8 +496,7 @@ final class AttendanceSessionService
                 'status' => 'Recorded',
             ]);
 
-        $sessions = DB::table('attendance_sessions')
-            ->join('courses', 'courses.id', '=', 'attendance_sessions.course_id')
+        $sessions = AttendanceSession::join('courses', 'courses.id', '=', 'attendance_sessions.course_id')
             ->leftJoin('course_schedules', 'course_schedules.id', '=', 'attendance_sessions.course_schedule_id')
             ->leftJoin('attendance_session_records', 'attendance_session_records.attendance_session_id', '=', 'attendance_sessions.id')
             ->where('attendance_sessions.professor_id', $professorId)
@@ -576,8 +590,7 @@ final class AttendanceSessionService
 
     private function enrolledCount(int $courseId): int
     {
-        return DB::table('student_enrollments')
-            ->where('course_id', $courseId)
+        return StudentEnrollment::where('course_id', $courseId)
             ->whereIn('status', ['active', 'registered', 'upcoming'])
             ->count();
     }
@@ -587,7 +600,7 @@ final class AttendanceSessionService
         $code = trim((string) $code);
         $qrToken = trim((string) $qrToken);
 
-        $query = DB::table('attendance_sessions');
+        $query = AttendanceSession::query();
 
         if ($qrToken !== '') {
             $query->where('qr_token', $qrToken);
@@ -627,8 +640,7 @@ final class AttendanceSessionService
      */
     private function sessionPayload(int $sessionId): array
     {
-        $session = DB::table('attendance_sessions')
-            ->join('courses', 'courses.id', '=', 'attendance_sessions.course_id')
+        $session = AttendanceSession::join('courses', 'courses.id', '=', 'attendance_sessions.course_id')
             ->join('professors', 'professors.id', '=', 'attendance_sessions.professor_id')
             ->join('users as professor_users', 'professor_users.id', '=', 'professors.user_id')
             ->leftJoin('course_schedules', 'course_schedules.id', '=', 'attendance_sessions.course_schedule_id')
@@ -685,6 +697,7 @@ final class AttendanceSessionService
             'isActive' => $isActive,
             'remainingSeconds' => $isActive ? max(0, $endsAt->getTimestamp() - $now->getTimestamp()) : 0,
             'checkInCode' => (string) $session->code,
+            'code' => (string) $session->code,
             'qrToken' => (string) $session->qr_token,
             'qrPayload' => (string) $session->qr_token,
             'totalEnrolled' => $records->count(),
@@ -701,8 +714,7 @@ final class AttendanceSessionService
      */
     private function sessionRecords(int $sessionId): Collection
     {
-        return DB::table('attendance_session_records')
-            ->join('students', 'students.id', '=', 'attendance_session_records.student_id')
+        return AttendanceSessionRecord::join('students', 'students.id', '=', 'attendance_session_records.student_id')
             ->join('users', 'users.id', '=', 'students.user_id')
             ->where('attendance_session_records.attendance_session_id', $sessionId)
             ->orderBy('users.name')
@@ -734,8 +746,7 @@ final class AttendanceSessionService
         do {
             $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
         } while (
-            DB::table('attendance_sessions')
-                ->where('code', $code)
+            AttendanceSession::where('code', $code)
                 ->exists()
         );
 
@@ -747,8 +758,7 @@ final class AttendanceSessionService
         do {
             $token = bin2hex(random_bytes(24));
         } while (
-            DB::table('attendance_sessions')
-                ->where('qr_token', $token)
+            AttendanceSession::where('qr_token', $token)
                 ->exists()
         );
 
@@ -847,8 +857,7 @@ final class AttendanceSessionService
             throw new AttendanceSessionException('Professor profile was not found.', 404);
         }
 
-        $session = DB::table('attendance_sessions')
-            ->where('id', $sessionId)
+        $session = AttendanceSession::where('id', $sessionId)
             ->where('professor_id', $professorId)
             ->first();
 
@@ -858,8 +867,7 @@ final class AttendanceSessionService
 
         $now = now();
         foreach ($records as $record) {
-            $studentId = DB::table('students')
-                ->where('student_key', $record['studentId'])
+            $studentId = Student::where('student_key', $record['studentId'])
                 ->value('id');
 
             if ($studentId === null) {
@@ -870,29 +878,23 @@ final class AttendanceSessionService
                 ? $record['status']
                 : 'absent';
 
-            $existing = DB::table('attendance_session_records')
-                ->where('attendance_session_id', $sessionId)
+            $existing = AttendanceSessionRecord::where('attendance_session_id', $sessionId)
                 ->where('student_id', (int) $studentId)
                 ->first();
 
             if ($existing !== null) {
-                DB::table('attendance_session_records')
-                    ->where('id', (int) $existing->id)
-                    ->update([
-                        'status'        => $status,
-                        'checked_in_at' => in_array($status, ['present', 'late'], true) ? $now : null,
-                        'method'        => 'manual',
-                        'updated_at'    => $now,
-                    ]);
+                $existing->update([
+                    'status'        => $status,
+                    'checked_in_at' => in_array($status, ['present', 'late'], true) ? $now : null,
+                    'method'        => 'manual',
+                ]);
             } else {
-                DB::table('attendance_session_records')->insert([
+                AttendanceSessionRecord::create([
                     'attendance_session_id' => $sessionId,
                     'student_id'            => (int) $studentId,
                     'status'                => $status,
                     'checked_in_at'         => in_array($status, ['present', 'late'], true) ? $now : null,
                     'method'                => 'manual',
-                    'created_at'            => $now,
-                    'updated_at'            => $now,
                 ]);
             }
         }

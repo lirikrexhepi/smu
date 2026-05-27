@@ -9,6 +9,14 @@ use App\Models\Gradebook\StudentEnrollment;
 
 class Student extends Model
 {
+    /**
+     * @return HasMany<StudentEmergencyContact, $this>
+     */
+    public function emergencyContacts(): HasMany
+    {
+        return $this->hasMany(StudentEmergencyContact::class);
+    }
+
     protected $fillable = [
         'user_id',
         'program_id',

@@ -61,28 +61,24 @@ final class ProfessorGradebookService
             ];
         })->values()->all();
 
-        // Assessments — all real counts, no estimates
         $assessments = CourseEvent::with('course')
             ->whereIn('course_id', $courseIds)
             ->where('category', 'deadline')
             ->orderBy('event_date')
             ->get()
             ->map(function (CourseEvent $event): array {
-                $total = DB::table('student_enrollments')
-                    ->where('course_id', $event->course_id)
+                $total = StudentEnrollment::where('course_id', $event->course_id)
                     ->whereIn('status', ['active', 'registered', 'upcoming', 'completed'])
                     ->count();
 
-                $graded = DB::table('course_grade_records')
-                    ->join('student_enrollments', 'course_grade_records.student_enrollment_id', '=', 'student_enrollments.id')
+                $graded = CourseGradeRecord::join('student_enrollments', 'course_grade_records.student_enrollment_id', '=', 'student_enrollments.id')
                     ->where('student_enrollments.course_id', $event->course_id)
                     ->where('course_grade_records.grade_key', $event->event_key)
                     ->whereNotNull('course_grade_records.grade')
                     ->count();
 
                 // Submitted = number who have ANY grade record for this event key (graded or pending)
-                $submitted = DB::table('course_grade_records')
-                    ->join('student_enrollments', 'course_grade_records.student_enrollment_id', '=', 'student_enrollments.id')
+                $submitted = CourseGradeRecord::join('student_enrollments', 'course_grade_records.student_enrollment_id', '=', 'student_enrollments.id')
                     ->where('student_enrollments.course_id', $event->course_id)
                     ->where('course_grade_records.grade_key', $event->event_key)
                     ->count();

@@ -3,14 +3,33 @@
 namespace App\Models\Academic;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\Identity\Professor;
+use App\Models\Identity\Department;
+use App\Models\Academic\Semester;
 use App\Models\Gradebook\StudentEnrollment;
 use App\Models\Attendance\AttendanceSession;
 
 class Course extends Model
 {
+    /**
+     * @return BelongsTo<Department, $this>
+     */
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    /**
+     * @return BelongsTo<Semester, $this>
+     */
+    public function semester(): BelongsTo
+    {
+        return $this->belongsTo(Semester::class);
+    }
+
     protected $fillable = [
         'course_key',
         'code',
